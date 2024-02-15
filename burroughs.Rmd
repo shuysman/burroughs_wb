@@ -1,0 +1,107 @@
+```{r}
+library(tidyverse)
+library(sf)
+library(elevatr)
+library(tidyterra)
+library(climateR)
+library(soilDB)
+library(slider)
+library(terra)
+
+units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cast("MULTIPOLYGON")
+
+units_4326 <- units %>% st_transform(crs = crs("EPSG:4326"))
+
+elev_rast <- get_elev_raster(units, z = 14)
+
+slope <- terra::terrain(elev_rast, opt="slope") %>% rast()
+aspect <- terra::terrain(elev_rast, opt="aspect") %>% rast()
+
+shade <- terra::shade(slope, aspect)
+
+ggplot() +
+    geom_spatraster(data = aspect) +
+    geom_sf(data = units, fill = NA, lwd = 2)
+
+ggplot() +
+    geom_spatraster(data = slope) +
+    geom_sf(data = units, fill = NA, lwd = 2)
+
+ggplot() +
+    geom_spatraster(data = shade) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    geom_sf(data = units, fill = NA, lwd = 2)
+
+
+gridmet_data <- getGridMET(units_4326, varname = c("tmmn", "tmmx", "pr"), startDate = "1980-01-01", endDate = "2022-12-31")
+
+names(gridmet_data$precipitation_amount) <- rep("pr", nlyr(gridmet_data$precipitation_amount))
+names(gridmet_data$daily_maximum_temperature) <- rep("tmmx", nlyr(gridmet_data$daily_maximum_temperature))
+names(gridmet_data$daily_minimum_temperature) <- rep("tmmn", nlyr(gridmet_data$daily_minimum_temperature))
+
+gridmet_data$daily_average_temperature <- (gridmet_data$daily_maximum_temperature + gridmet_data$daily_minimum_temperature) / 2
+
+gridmet_sds <- sds(gridmet_data)
+
+##gridmet_spatraster <- c(gridmet_data$precipitation_amount, gridmet_data$daily_maximum_temperature, gridmet_data$daily_minimum_temperature)
+
+melt_factor <- terra::app(gridmet_data$daily_average_temperature - 273.15, function (x) {
+    case_when(x <= 0 ~ 0,
+              x < 6 ~ 0.167 * x,
+              x >= 6 ~ 1)
+})
+
+names(melt_factor) <- rep("f", nlyr(melt_factor))
+time(melt_factor) <- time(gridmet_data$daily_average_temperature)
+gridmet_sds <- c(gridmet_sds, melt_factor = melt_factor)
+
+rain <- melt_factor * gridmet_data$precipitation_amount
+snow <- (1 - melt_factor) * gridmet_data$precipitation_amount
+
+gridmet_sds <- c(gridmet_sds, rain = rain)
+gridmet_sds <- c(gridmet_sds, snow = snow)
+
+get_pack <- function (ppt, F, sp.0=NULL) {
+    snowpack <- vector()
+    sp.0 <- ifelse(!is.null(sp.0), sp.0, 0)
+    for (i in 1:length(ppt)) {
+        if (i == 1) {
+            snowpack[i] = (1 - F[i])**2 * ppt[i] + (1 - F[i]) * sp.0
+        } else {
+            snowpack[i] = (1 - F[i])**2 * ppt[i] + (1 - F[i]) * snowpack[i - 1]
+        }
+    }
+    return(snowpack)
+}
+
+pack <- terra::lapp(sds(gridmet_sds$precipitation_amount, gridmet_sds$melt_factor), fun = get_pack)
+
+gridmet_sds <- c(gridmet_sds, pack = pack)
+
+get_melt <- function (snow, pack, F, sp.0=NULL) {
+    sp.0 <- ifelse(!is.null(sp.0), sp.0, 0)
+    melt <- vector()
+    for (i in 1:length(snow)) {
+      if ( i == 1 ) {
+        melt[i] = F[i] * (snow[i] + sp.0)
+      } else {
+        melt[i] = F[i] * (snow[i] + pack[i-1])
+      }
+    }
+    return(melt)
+}
+
+melt <- terra::lapp(sds(gridmet_sds$snow, gridmet_sds$pack, gridmet_sds$melt_factor), fun = get_melt)
+
+
+## ssurgo_geom <- SDA_spatialQuery(st_as_sfc(st_bbox(units_4326)), what = "mupolygon", db = "SSURGO", geomIntersection = TRUE)
+
+## mu.is <- format_SQL_in_statement(ssurgo_geom$mukey[1])
+## sql <- sprintf("mukey IN %s", mu.is)
+
+## x <- fetchSDA(sql)
+
+
+
+
+```
