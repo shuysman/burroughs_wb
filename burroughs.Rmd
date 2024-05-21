@@ -105,3 +105,27 @@ melt <- terra::lapp(sds(gridmet_sds$snow, gridmet_sds$pack, gridmet_sds$melt_fac
 
 
 ```
+
+
+# Analysis
+1. Prepare layers
+Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference
+- DEM
+1m LiDAR opentopography.org
+- resample_layers.R
+	dayl
+	t50
+- slope (GDAL in QGIS)
+- aspect (GDAL in QGIS)
+- split_ncs.R/split_ncs.sbatch
+  Split climate inputs (tmax, tmin, Precip) into tifs, 1 tif per day
+  Results in millions of layers for each combo of day/year/gcm/scenario/variable
+- Soil
+SSURGO data from Curve Number Generator in QGIS
+150 cm depth AWC
+
+2. Run WB
+start_wb_v_1_5.py
+
+3. Collate
+collate.R
