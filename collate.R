@@ -10,7 +10,7 @@ terraOptions(verbose = TRUE)
 np <- import("numpy")
 
 script_data_dir <- file.path("./data/")
-input_data_dir <- file.path("~/out/wb/")
+input_data_dir <- file.path("~/out/burroughs/wb/")
 output_data_dir <- file.path("~/out/burroughs/collated/")
 reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 
