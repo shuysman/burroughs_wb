@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+May 2024
+Modified Water Balance Model to run on 1m LiDAR data
+Proof of Concept for downscaled Water Balance runs at smaller scales.  Used to examin planting microsites for
+Summer 2024 Whitebark Pine planting with Nancy Bockino in Shoshone NF
+
 December 2019
 Gridded Cloud Water Balance Model Version 1.5: Retroactively removing Senay et al. NDVI method of calculating AET BUT retaining Jennings et al. 2018 T50 coefficients for estimating snow.
 This version also removes the IGRID veg layer precip correction. The relevant lines have just been commented out. 
