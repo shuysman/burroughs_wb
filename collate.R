@@ -14,8 +14,7 @@ input_data_dir <- file.path("~/out/burroughs/wb/")
 output_data_dir <- file.path("~/out/burroughs/collated/")
 reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 
-years <- 1979:2022
-vars <- c('soil_water','PET','AET','Deficit','runoff','agdd','accumswe', 'rain')
+years <- 1979:2022 ## 2023 data is incomplete
 var_units <- hash('soil_water' = "mm * 10",
                   'PET' = "mm * 10",
                   'AET' = "mm * 10",
