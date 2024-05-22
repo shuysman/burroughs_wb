@@ -9,9 +9,10 @@ terraOptions(verbose = TRUE)
 
 np <- import("numpy")
 
-input_data_dir <- file.path("./data")
-output_data_dir <- file.path("~/out/burroughs/collated")
-reference <- rast(file.path(input_data_dir, "1980_dayl_gye.nc4"))
+script_data_dir <- file.path("./data/")
+input_data_dir <- file.path("~/out/wb/")
+output_data_dir <- file.path("~/out/burroughs/collated/")
+reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 
 years <- 1979:2022
 vars <- c('soil_water','PET','AET','Deficit','runoff','agdd','accumswe', 'rain')
@@ -67,7 +68,7 @@ make_collation <- function(options) {
 
     ##writeCDF(output_rast, filename = out_file, overwrite = TRUE)
 
-    wb_files <- list.files("/home/steve/out/wb/", pattern = glue("{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
+    wb_files <- list.files(input_data_dir, pattern = glue("{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
 
     for (f in wb_files) {
         print(f)
