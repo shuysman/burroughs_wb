@@ -12,12 +12,22 @@ units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cas
 
 units_4326 <- units %>% st_transform(crs = crs("EPSG:4326"))
 
-elev_rast <- get_elev_raster(units, z = 14)
+elev_rast_aws <- get_elev_raster(units, z = 14, src = "aws")
 
-slope <- terra::terrain(elev_rast, opt="slope") %>% rast()
-aspect <- terra::terrain(elev_rast, opt="aspect") %>% rast()
+## USGS 1m LiDAR DEM
+## Dataset Citation: United States Geological Survey (2021). United States Geological Survey 3D Elevation Program 1 meter Digital Elevation Model. Distributed by OpenTopography. https://doi.org/10.5069/G98K778D. Accessed: 2024-05-07 
 
-shade <- terra::shade(slope, aspect)
+elev_rast <- rast("./data/burroughs_creek_USGS1m.tif")
+
+autoplot(elev_rast) +
+  theme_minimal()
+
+slope <- terrain(elev_rast, v="slope") 
+aspect <- terrain(elev_rast, v="aspect")
+
+shade <- terra::shade(slope, aspect, 30, 270)
+
+pal_greys <- hcl.colors(1000, "Grays")
 
 ggplot() +
     geom_spatraster(data = aspect) +
@@ -30,7 +40,8 @@ ggplot() +
 ggplot() +
     geom_spatraster(data = shade) +
 ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    geom_sf(data = units, fill = NA, lwd = 2)
+    geom_sf(data = units, fill = NA, lwd = 2) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA)
 
 
 gridmet_data <- getGridMET(units_4326, varname = c("tmmn", "tmmx", "pr"), startDate = "1980-01-01", endDate = "2022-12-31")
@@ -129,3 +140,73 @@ start_wb_v_1_5.py
 
 3. Collate
 collate.R
+
+
+``` r
+
+##time(output_rast) <- time(reference)
+
+##test_ext <- c(606336, 607500, 4839876, 4840600)
+
+units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cast("MULTIPOLYGON")
+
+elev <- rast("./data/burroughs_creek_USGS1m_clipped_nad83.tif") 
+
+shade <- rast("./data/burroughs_creek_USGS1m_clipped_hillshade_nad83.tif")
+
+autoplot(shade)
+
+pal_greys <- hcl.colors(1000, "Grays")
+
+## ggplot() +
+##     geom_spatraster(data = shade) +
+## ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+##     scale_fill_gradientn(colors = pal_greys, na.value = NA)
+
+r <- output_rast %>%
+    subset(1,9999) %>%
+    ##crop(test_ext) %>%
+    clamp(lower = 0, values = FALSE) %>%
+    sum()
+
+ggplot() +
+    geom_spatraster(data = shade) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = r, alpha = 0.5) +
+    scale_fill_viridis_c(option = "A") +
+    geom_sf(data = units, fill = NA, lwd = 1.5)
+
+
+library(rayshader)
+library(abind)
+
+#And convert it to a matrix:
+elmat = raster_to_matrix(elev)
+
+coltb <- data.frame(value=1:1000, col=rainbow(1000, end=.9))
+coltab(r) <- coltb
+RGB(r) <- c(1,1,1)
+def_colors = colorize(r)
+
+defmat = abind(elmat,raster_to_matrix(r), along = 3)
+#alpha = array(1, dim = dim(defmat))
+#defmat = abind(defmat, alpha, along = 4)
+
+#defmat = raster_to_matrix(r)
+
+#We use another one of rayshader's built-in textures:
+elmat %>%
+    sphere_shade() %>%
+    ##add_water(detect_water(elmat), color = "desert") %>%
+    add_overlay(overlay = defmat) %>%
+    plot_3d(elmat)
+
+
+render_camera(fov = 0, theta = 60, zoom = 0.75, phi = 45)
+render_scalebar(limits=c(0, 5, 10),label_unit = "km",position = "W", y=50,
+                scale_length = c(0.33,1))
+render_compass(position = "E")
+
+```
