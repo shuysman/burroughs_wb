@@ -82,7 +82,7 @@ make_collation <- function(options) {
 }
 
 
-options <- expand.grid(var = vars, year = years) %>%
+options <- expand.grid(var = keys(var_units), year = years) %>%
     t() %>%
     data.frame()
 
