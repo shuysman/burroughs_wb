@@ -533,7 +533,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 def mp_write_daily(): # Subsets to just CONUS and multiplies the output_mult_factor if applicable
-    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor, model, scenario
+    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor
     chunk_size = npz_cores
     param_chunks = chunks(output_params,chunk_size)
     var_dict = {'PET':PET_adjusted,'AET':AET,'runoff':runoff,'Deficit':deficit,'rain':rain,'water_input_to_soil':w,'melt':melt,
@@ -690,7 +690,7 @@ def read_dir():
     return out
 
 def find_file_chunks(search_first_year, search_last_year, textfilename = 'null'): # For parsing filenames of GCM data
-    global web, model, scenario
+    global web
     chunk_list = []
     sfy = int(search_first_year)
     sly = int(search_last_year)
@@ -858,7 +858,6 @@ def process_model_scenario(model, scenario):
         input_data_path = '~/out/daily-split/'
         burroughs_data_path = "./data/"
         output_data_path = f'~/out/wb/{model}/'
-        npz_cores = 8
         collate_cores = 4 # This can be raised once the model loops finish.
         first_day = 0
         last_day = 366
@@ -923,7 +922,6 @@ def process_model_scenario(model, scenario):
     year_list = [str(x) for x in years]
     #print(year_list)
     years_done = []
-    pool = 'null'
     leapyears = leapyearlist()       
     output_params = ['soil_water','PET','AET','Deficit','runoff','agdd','accumswe', 'rain']
     output_units = {'PET':'mm','AET':'mm','Deficit':'mm','accumswe':'mm','melt':'mm','days_snow':'mm','rain':'mm','water_input_to_soil':'mm','runoff':'mm','agdd':'C','accum_precip':'mm'}       
@@ -968,7 +966,7 @@ def process_model_scenario(model, scenario):
     chunk_index = tif_list[0].split('_')[0] # The number appearing at the start of each tif filename
     year_break_index = 0 # The set of year breaks, corresponding to file chunks, that we are currently using
     day_index = 0 + testing_offset
-    log_file = open('logfile.csv','w')
+    log_file = open(f'{model}-{scenario}-logfile.csv','w')
     for tif in tif_list: 
         current_pr_file = tif_list[file_index]
         current_tmax_file = set_param(current_pr_file,'tmmx')
@@ -1083,6 +1081,8 @@ def process_model_scenario(model, scenario):
 
 
 if __name__ == '__main__':
+    npz_cores = 12
+            
     scenarios = ("rcp45", "rcp85")
     models = (
         "bcc-csm1-1-m",
@@ -1111,5 +1111,6 @@ if __name__ == '__main__':
     
     combinations = tuple(itertools.product(models, scenarios))
 
-    for model, scenario in combinations:
-        process_model_scenario(model, scenario)
+    ## make sure to allocate npz_cores * p cpus
+    with Pool(12) as p:
+        p.map(process_model_scenario, combinations)
