@@ -690,7 +690,7 @@ def read_dir():
     return out
 
 def find_file_chunks(search_first_year, search_last_year, textfilename = 'null'): # For parsing filenames of GCM data
-    global web, scenario
+    global web, model, scenario
     chunk_list = []
     sfy = int(search_first_year)
     sly = int(search_last_year)
@@ -698,7 +698,8 @@ def find_file_chunks(search_first_year, search_last_year, textfilename = 'null')
     if web == False: fl = read_text_list(textfilename)
     else: fl = read_dir()
     fl = [x for x in fl if x.split('_')[2] == 'pr'] # look at only one param, pr, for this screening
-    fl = [x for x in fl if x.split('_')[4] == scenario]
+    fl = [x for x in fl if x.split('_')[3] == model]
+    fl = [x for x in fl if x.split('_')[5] == scenario]
     fl.sort(key = lambda x: int(x.split("_")[0]))
     
     # first_file_chunk = 'null'
