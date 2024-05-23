@@ -213,3 +213,120 @@ render_scalebar(limits=c(0, 5, 10),label_unit = "km",position = "W", y=50,
 render_compass(position = "E")
 
 ```
+
+``` r
+library(tidyverse)
+library(terra)
+library(tidyterra)
+library(sf)
+library(ggnewscale)
+library(ggspatial)
+
+terraOptions(verbose = TRUE)
+
+burroughs_data_dir <- file.path("~/out/")
+
+units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cast("MULTIPOLYGON")
+
+elev <- rast("./data/burroughs_creek_USGS1m_clipped_nad83.tif") 
+
+shade <- rast("./data/burroughs_creek_USGS1m_clipped_hillshade_nad83.tif")
+
+### Use annual_sums.sh script to generate annual sums
+## aet_files <- list.files(burroughs_data_dir, "AET.*", full.names = TRUE)
+
+## aet <- rast(aet_files,  drivers="NETCDF")
+
+## aet_sum <- aet |>
+##     terra::tapp(index = "years",
+##                 fun = sum,
+##                 filename = "~/out/AET_annual_sum_burroughs.nc")
+
+
+## aet_sum <- rast("~/out/AET_annual_sum_burroughs.nc") |>
+##     clamp(lower = 0, values = NA) / 10
+
+## time(aet_sum) <- 1979:2022
+
+## mean_aet_sum <- mean(aet_sum)
+
+## cwd_files <- list.files(burroughs_data_dir, "Deficit.*", full.names = TRUE)
+
+## cwd <- rast(cwd_files,  drivers="NETCDF")
+
+## cwd_sum <- cwd |>
+##     terra::tapp(index = "years",
+##                 fun = sum,
+##                 filename = "~/out/Deficit_annual_sum_burroughs.nc")
+
+
+
+aet <- rast(file.path(burroughs_data_dir, "AET_annual_sum_burroughs.nc")) |>
+    clamp(lower = 0, values = NA)
+cwd <- rast(file.path(burroughs_data_dir, "Deficit_annual_sum_burroughs.nc")) |>
+    clamp(lower = 0, values = NA)
+
+aet_mean <- aet %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean() / 10
+cwd_mean <- cwd %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean() / 10
+
+pal_greys <- hcl.colors(1000, "Grays")
+
+ggplot() +
+##    geom_spatraster(data = shade, show.legend = FALSE) +
+##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+##    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = clamp(aet_mean, lower = 100, upper = 200, values = NA), alpha = 1) +
+    scale_fill_viridis_c(option = "D") +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of AET (mm), 100-200mm") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+ggsave("burroughs_2002-2022_aet.png", width=16, height=12)
+
+
+ggplot() +
+##    geom_spatraster(data = shade, show.legend = FALSE) +
+##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = clamp(cwd_mean, lower = 100, values = NA), alpha = 1) +
+    scale_fill_viridis_c(option = "B", direction = 1) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of Deficit (mm), >= 100mm") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+ggsave("burroughs_2002-2022_deficit.png", width=16, height=12)
+
+
+zonal(cwd_mean, vect(units), fun = "mean", na.rm = TRUE)
+
+cwd_mean_thresh <- cwd_mean <= 175
+
+ggplot() +
+    geom_spatraster(data = shade, show.legend = FALSE) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = cwd_mean, alpha = 0.85) +
+    scale_fill_viridis_b(option = "F", direction = 1, breaks = c(0,50,100,150,200,250,300)) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of Deficit, areas <= 110m D") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+
+ggplot() +
+    geom_spatraster(data = shade, show.legend = FALSE) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = aet_mean, alpha = 0.85) +
+    scale_fill_viridis_b(option = "D", direction = 1, breaks = c(50,100,150,200)) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of AET, areas <= 110m D") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+```
