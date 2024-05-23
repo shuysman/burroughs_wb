@@ -1106,8 +1106,10 @@ if __name__ == '__main__':
         "NorESM1-M"
     )
 
-
+    ##scenarios = ("gridmet")
+    ##models = ("historical")
+    
     combinations = tuple(itertools.product(models, scenarios))
 
     for model, scenario in combinations:
-        print(f"{model} {scenario}")
+        process_model_scenario(model, scenario)
