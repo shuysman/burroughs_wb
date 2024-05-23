@@ -700,7 +700,7 @@ def find_file_chunks(search_first_year, search_last_year, textfilename = 'null')
     ## This will break for the model and scenario naming scheme used for the historical wb run
     fl = [x for x in fl if x.split('_')[2] == 'pr'] # look at only one param, pr, for this screening
     fl = [x for x in fl if x.split('_')[3] == model]
-    fl = [x for x in fl if x.split('_')[5] == scenario]
+    fl = [x for x in fl if x.split('_')[4] == scenario] ## Scenario is 4 for gridmet, 5 for projections
     fl.sort(key = lambda x: int(x.split("_")[0]))
     
     # first_file_chunk = 'null'
