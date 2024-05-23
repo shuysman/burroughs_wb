@@ -13,6 +13,7 @@ This version also removes the IGRID veg layer precip correction. The relevant li
 This version reads the reprojected tif files from the MACA GCMs instead of daymet netCDF files.
 """
 import datetime
+import itertools
 import multiprocessing
 import os
 import pickle
@@ -439,92 +440,92 @@ def write_var_to_netCDF(outfile,varname,arr,dayindex):
     outfile.variables[varname][dayindex] = np.ma.masked_invalid(arr)
     
 
-def init_output_netCDF(filename,year,seed_param,new_param, signif_digits = 2, intswitch = False): # Resets spatial extent to match subsetted data.
-    print('Initializing output file {f} for {y}'.format(f=filename, y = year))
-    global output_data_path,output_units, new_lats, new_lons, new_x, new_y, model, scenario
-    ##fill_dict = {'lat': new_lats, 'lon': new_lons, 'x': new_x, 'y': new_y}
-    fill_dict = {'easting': new_x[:, 0], 'northing': new_y[0,:]}
-    fill_dims = {'easting': 1292, 'northing': 1595, 'time': 366}
-    try:
-        os.remove(output_data_path + filename)
-    except:
-        pass
-    dsout = netCDF4.Dataset(output_data_path + 'V_1_5_' + str(year) + '_' + model + '_' + scenario + '_' + filename,'w',clobber = True, format = 'NETCDF4')
-    dsin = netCDF4.Dataset(input_data_path + '1980_dayl_gye.nc4') # Seed file is a leap year, so time dimension = 366 days.
-    #Copy dimensions from seed file
-    for item in dsin.dimensions:
-        dname = dsin.dimensions[item].name
-        if dname in fill_dims:
-            dlen = fill_dims[dname]
-        else:
-            dlen = dsin.dimensions[item].size
-        dsout.createDimension(dname, dlen)
-    # Copy variables from old file, but replace seed param with new param.
-    for item in dsin.variables:
-        dtype = dsin.variables[item].dtype
+# def init_output_netCDF(filename,year,seed_param,new_param, signif_digits = 2, intswitch = False): # Resets spatial extent to match subsetted data.
+#     print('Initializing output file {f} for {y}'.format(f=filename, y = year))
+#     global output_data_path,output_units, new_lats, new_lons, new_x, new_y, model, scenario
+#     ##fill_dict = {'lat': new_lats, 'lon': new_lons, 'x': new_x, 'y': new_y}
+#     fill_dict = {'easting': new_x[:, 0], 'northing': new_y[0,:]}
+#     fill_dims = {'easting': 1292, 'northing': 1595, 'time': 366}
+#     try:
+#         os.remove(output_data_path + filename)
+#     except:
+#         pass
+#     dsout = netCDF4.Dataset(output_data_path + 'V_1_5_' + str(year) + '_' + model + '_' + scenario + '_' + filename,'w',clobber = True, format = 'NETCDF4')
+#     dsin = netCDF4.Dataset(input_data_path + '1980_dayl_gye.nc4') # Seed file is a leap year, so time dimension = 366 days.
+#     #Copy dimensions from seed file
+#     for item in dsin.dimensions:
+#         dname = dsin.dimensions[item].name
+#         if dname in fill_dims:
+#             dlen = fill_dims[dname]
+#         else:
+#             dlen = dsin.dimensions[item].size
+#         dsout.createDimension(dname, dlen)
+#     # Copy variables from old file, but replace seed param with new param.
+#     for item in dsin.variables:
+#         dtype = dsin.variables[item].dtype
         
-        vname = dsin.variables[item].name
-        '''
-        if vname.strip() == seed_param :
-            vname = new_param
-        dims = dsin.variables[item].dimensions #Dimensions for the new output variable are defined as ('time','y','x') here with values from fill_dict used for y and x.
-       '''
-        if vname.strip() == seed_param :
-            vname = new_param
-        elif vname.strip() == 'yearday':
-            vname = 'timeunit'
-        print(item,dsin.variables[item].dimensions)
-        if vname != 'timeunit': dims = dsin.variables[item].dimensions
-        else: dims = dsin.variables['time'].dimensions
-        # Set variable attributes
+#         vname = dsin.variables[item].name
+#         '''
+#         if vname.strip() == seed_param :
+#             vname = new_param
+#         dims = dsin.variables[item].dimensions #Dimensions for the new output variable are defined as ('time','y','x') here with values from fill_dict used for y and x.
+#        '''
+#         if vname.strip() == seed_param :
+#             vname = new_param
+#         elif vname.strip() == 'yearday':
+#             vname = 'timeunit'
+#         print(item,dsin.variables[item].dimensions)
+#         if vname != 'timeunit': dims = dsin.variables[item].dimensions
+#         else: dims = dsin.variables['time'].dimensions
+#         # Set variable attributes
         
-        print(item,vname,intswitch)
-        if vname != new_param :
-            print('old')
-            outVar = dsout.createVariable(vname, dtype, dims, zlib = True, complevel = 3) #Set complevel 1 - 9 to change compression level. 9 is most compression
-            outVar.setncatts({k: dsin.variables[item].getncattr(k) for k in dsin.variables[item].ncattrs()})
-        elif intswitch == False:
-            outVar = dsout.createVariable(vname, dtype, dims, zlib = True, complevel = 3, least_significant_digit = signif_digits) #Set complevel 1 - 9 to change compression level. 9 is most compression
-            outVar.setncatts({k: dsin.variables[item].getncattr(k) for k in dsin.variables[item].ncattrs()})
-        else:
-            outVar = dsout.createVariable(varname = vname, datatype = 'i2',dimensions =  dims, zlib = True, complevel = 3) 
-            attdict = {}
-            for k in dsin.variables[item].ncattrs():
-                if k == '_FillValue':
-                    continue
-                elif k == 'missing_value':
-                    continue
-                else: attdict[k] = dsin.variables[item].getncattr(k)
-            outVar.setncatts(attdict)
-        outVar.long_name = vname
-        try:
-            outVar.units = output_units[vname]
-        except:
-            pass
-    ##fill_params = ['x','y','lat','lon','time','timeunit','time_bnds','time_bnds']
-    fill_params = ['easting', 'northing', 'time']
-    newtimes = np.arange(366) 
-    newtimes = newtimes + 0.5
-    # newtimeunits = [int(x) for x in newtimes+1]
-    # newtimebnds = np.hstack((newtimes, newtimes + 1))
-    # newtimebnds = newtimebnds.reshape(366,2)
-    for param in fill_params:
-        if param == 'time': 
-            dsout.variables[param][:] = newtimes
-        # elif param == 'timeunit':
-        #     dsout.variables[param][:] = newtimeunits
-        # elif param == 'time_bnds': 
-        #     dsout.variables[param][:] = newtimebnds
-        elif param in fill_dict:
-            outdata = fill_dict[param]
-            dsout.variables[param][:] = outdata
-        else:
-            outdata = dsin.variables[param][:]
-            dsout.variables[param][:] = outdata
+#         print(item,vname,intswitch)
+#         if vname != new_param :
+#             print('old')
+#             outVar = dsout.createVariable(vname, dtype, dims, zlib = True, complevel = 3) #Set complevel 1 - 9 to change compression level. 9 is most compression
+#             outVar.setncatts({k: dsin.variables[item].getncattr(k) for k in dsin.variables[item].ncattrs()})
+#         elif intswitch == False:
+#             outVar = dsout.createVariable(vname, dtype, dims, zlib = True, complevel = 3, least_significant_digit = signif_digits) #Set complevel 1 - 9 to change compression level. 9 is most compression
+#             outVar.setncatts({k: dsin.variables[item].getncattr(k) for k in dsin.variables[item].ncattrs()})
+#         else:
+#             outVar = dsout.createVariable(varname = vname, datatype = 'i2',dimensions =  dims, zlib = True, complevel = 3) 
+#             attdict = {}
+#             for k in dsin.variables[item].ncattrs():
+#                 if k == '_FillValue':
+#                     continue
+#                 elif k == 'missing_value':
+#                     continue
+#                 else: attdict[k] = dsin.variables[item].getncattr(k)
+#             outVar.setncatts(attdict)
+#         outVar.long_name = vname
+#         try:
+#             outVar.units = output_units[vname]
+#         except:
+#             pass
+#     ##fill_params = ['x','y','lat','lon','time','timeunit','time_bnds','time_bnds']
+#     fill_params = ['easting', 'northing', 'time']
+#     newtimes = np.arange(366) 
+#     newtimes = newtimes + 0.5
+#     # newtimeunits = [int(x) for x in newtimes+1]
+#     # newtimebnds = np.hstack((newtimes, newtimes + 1))
+#     # newtimebnds = newtimebnds.reshape(366,2)
+#     for param in fill_params:
+#         if param == 'time': 
+#             dsout.variables[param][:] = newtimes
+#         # elif param == 'timeunit':
+#         #     dsout.variables[param][:] = newtimeunits
+#         # elif param == 'time_bnds': 
+#         #     dsout.variables[param][:] = newtimebnds
+#         elif param in fill_dict:
+#             outdata = fill_dict[param]
+#             dsout.variables[param][:] = outdata
+#         else:
+#             outdata = dsin.variables[param][:]
+#             dsout.variables[param][:] = outdata
         
-    dsin.close()
-    print('Done init ', new_param)
-    return dsout
+#     dsin.close()
+#     print('Done init ', new_param)
+#     return dsout
 
 def chunks(l, n):
     #Yield successive n-sized chunks from l.
@@ -532,7 +533,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 def mp_write_daily(): # Subsets to just CONUS and multiplies the output_mult_factor if applicable
-    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor
+    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor, model, scenario
     chunk_size = npz_cores
     param_chunks = chunks(output_params,chunk_size)
     var_dict = {'PET':PET_adjusted,'AET':AET,'runoff':runoff,'Deficit':deficit,'rain':rain,'water_input_to_soil':w,'melt':melt,
@@ -542,103 +543,103 @@ def mp_write_daily(): # Subsets to just CONUS and multiplies the output_mult_fac
         for f in chunk:
             #output_chunk = var_dict[f][subsetting_indices[0][0]:subsetting_indices[0][1],subsetting_indices[1][0]:subsetting_indices[1][1]] # Subsetting spatially here to just CONUS
             output_chunk = var_dict[f]
-            p = multiprocessing.Process(target = write_daily_to_npz,args=(day_index,year,f,output_chunk,output_mult_factor))
+            p = multiprocessing.Process(target = write_daily_to_npz,args=(model,scenario,day_index,year,f,output_chunk,output_mult_factor))
             p.start()
             jobs.append(p)
         for j in jobs:
             j.join()
             
-def write_daily_to_npz(day,year,param,data, output_mult_factor):
-    filename = output_data_path + year + '_' + str(day) + '_' + param + '.npz'
+def write_daily_to_npz(model,scenario,day,year,param,data, output_mult_factor):
+    filename = output_data_path + model + '_' + scenario + '_' + year + '_' + str(day) + '_' + param + '.npz'
     data = data * output_mult_factor
     if output_mult_factor > 1:
         data = np.round(data,0)
         data = np.where(np.isnan(data) == True, -9999, data)
     np.savez_compressed(filename, param = data)
         
-def close_annual_files(file_handles,year):
-    for fname in file_handles:
-        print('Closing file: {f} for {y}'.format(f = fname, y = year))
-        file_handles[fname].close()
+# def close_annual_files(file_handles,year):
+#     for fname in file_handles:
+#         print('Closing file: {f} for {y}'.format(f = fname, y = year))
+#         file_handles[fname].close()
 
-def collate_into_netcdf(year,output_params, signif_digits, intswitch = False):
-    #output_params is not global here
-    file_handles = {}
-    for fname in output_params:
-        file_handles[fname] = init_output_netCDF(fname + '.nc4',year,'1980_dayl_gye',fname, signif_digits = signif_digits, intswitch = intswitch)  
-    days = list(range(0,366)) # 366 days here but last will be skipped in non-leapyears because of try-except clause below
+# def collate_into_netcdf(year,output_params, signif_digits, intswitch = False):
+#     #output_params is not global here
+#     file_handles = {}
+#     for fname in output_params:
+#         file_handles[fname] = init_output_netCDF(fname + '.nc4',year,'1980_dayl_gye',fname, signif_digits = signif_digits, intswitch = intswitch)  
+#     days = list(range(0,366)) # 366 days here but last will be skipped in non-leapyears because of try-except clause below
    
-    for param in output_params:
-        for day in days:
-            infilename = output_data_path + str(year) + '_' + str(day) + '_' + param + '.npz'
-            try:
-                loaded = np.load(infilename)
-                arr  = loaded['param']
-                arr = np.around(arr, decimals = signif_digits)
-                if intswitch: 
-                    arr = arr.astype('i2')
-            except: # Will skip day 366 in non-leapyears
-                continue 
+#     for param in output_params:
+#         for day in days:
+#             infilename = output_data_path + str(year) + '_' + str(day) + '_' + param + '.npz'
+#             try:
+#                 loaded = np.load(infilename)
+#                 arr  = loaded['param']
+#                 arr = np.around(arr, decimals = signif_digits)
+#                 if intswitch: 
+#                     arr = arr.astype('i2')
+#             except: # Will skip day 366 in non-leapyears
+#                 continue 
             
-            print('collating : ',param,year,day)
-            try:
-                write_var_to_netCDF(file_handles[param],param,arr,day)
-            except:
-                continue 
-            os.remove(infilename)
-    close_annual_files(file_handles,year)
-    return time.time()
+#             print('collating : ',param,year,day)
+#             try:
+#                 write_var_to_netCDF(file_handles[param],param,arr,day)
+#             except:
+#                 continue 
+#             os.remove(infilename)
+#     close_annual_files(file_handles,year)
+#     return time.time()
 
-def get_soil_whc():
-    soil_whc = np.load(input_data_path + 'aligned_soil_whc_array.npy') # File is in cm.
-    soil_whc = soil_whc * 10 # convert to mm
-    ret = np.where(np.isnan(soil_whc) == True,100, soil_whc)
-    return ret
+# def get_soil_whc():
+#     soil_whc = np.load(input_data_path + 'aligned_soil_whc_array.npy') # File is in cm.
+#     soil_whc = soil_whc * 10 # convert to mm
+#     ret = np.where(np.isnan(soil_whc) == True,100, soil_whc)
+#     return ret
 
-def find_next_collate_year():
-    global output_data_path,year_list,next_collate_year,years_done
-    fl = os.listdir(output_data_path)
-    fl = [x for x in fl if x.split('.')[-1] == 'npz']
-    fl = [x for x in fl if output_params[0] in x]
-    next_found = False
-    for check_year in year_list:
-        for npz_file in fl:
-            if check_year in npz_file: 
-                next_collate_year = check_year
-                next_found = True
-                break
-        if next_found == True: break
-    return next_collate_year
+# def find_next_collate_year():
+#     global output_data_path,year_list,next_collate_year,years_done
+#     fl = os.listdir(output_data_path)
+#     fl = [x for x in fl if x.split('.')[-1] == 'npz']
+#     fl = [x for x in fl if output_params[0] in x]
+#     next_found = False
+#     for check_year in year_list:
+#         for npz_file in fl:
+#             if check_year in npz_file: 
+#                 next_collate_year = check_year
+#                 next_found = True
+#                 break
+#         if next_found == True: break
+#     return next_collate_year
 
-def launch_new_collation():
-    global next_collate_year, current_collate_year, years_done, collate_cores,end_times,output_params, pool, result_list, all_ints
-    int_params = ['agdd']
-    double_precision = ['runoff']
-    if (next_collate_year != current_collate_year) and (next_collate_year not in years_done):  
-        end_times = []
-        print('Launching collation of ', next_collate_year)
-        years_done.append(next_collate_year)
-        if pool != 'null':
-            pool.join()
-            print('Results: ',current_collate_year,result_list)
-            result_list = []
-        current_collate_year = next_collate_year
-        pool = multiprocessing.Pool(processes = collate_cores)
-        signif_digits = 1
-        for param in output_params:
-            if all_ints == True:
-                intswitch = True
-            elif param in int_params: 
-                intswitch = True
-            elif param in double_precision: 
-                signif_digits = 2
-                intswitch = False
-            else: 
-                intswitch = False
-                signif_digits = 1
-            end_times.append(pool.apply_async(collate_into_netcdf,args = (next_collate_year,[param], signif_digits, intswitch), callback = log_result))
-        pool.close()
-    return pool
+# def launch_new_collation():
+#     global next_collate_year, current_collate_year, years_done, collate_cores,end_times,output_params, pool, result_list, all_ints
+#     int_params = ['agdd']
+#     double_precision = ['runoff']
+#     if (next_collate_year != current_collate_year) and (next_collate_year not in years_done):  
+#         end_times = []
+#         print('Launching collation of ', next_collate_year)
+#         years_done.append(next_collate_year)
+#         if pool != 'null':
+#             pool.join()
+#             print('Results: ',current_collate_year,result_list)
+#             result_list = []
+#         current_collate_year = next_collate_year
+#         pool = multiprocessing.Pool(processes = collate_cores)
+#         signif_digits = 1
+#         for param in output_params:
+#             if all_ints == True:
+#                 intswitch = True
+#             elif param in int_params: 
+#                 intswitch = True
+#             elif param in double_precision: 
+#                 signif_digits = 2
+#                 intswitch = False
+#             else: 
+#                 intswitch = False
+#                 signif_digits = 1
+#             end_times.append(pool.apply_async(collate_into_netcdf,args = (next_collate_year,[param], signif_digits, intswitch), callback = log_result))
+#         pool.close()
+#     return pool
 
 def log_result(result):
     global result_list
@@ -802,7 +803,7 @@ def raster2xy(raster):
     return (x, y)
     
 
-if __name__ == '__main__':
+def process_model_scenario(model, scenario):
     # If not using daymet swe, then add accumswe to output_params list. Otherwise, same output can be obtained from daymet source files.
     #multiprocessing.log_to_stderr(logging.INFO)
     
@@ -815,8 +816,8 @@ if __name__ == '__main__':
     
     ##scenario = 'rcp85' # ******MUST SET THIS TO CORRECT VALUE BEFORE RUN *****
     ##model = 'MIROC5'
-    scenario = 'gridmet'
-    model = 'historical'
+    # scenario = 'gridmet'
+    # model = 'historical'
 
     height = 1595
     width = 1292
@@ -852,9 +853,9 @@ if __name__ == '__main__':
         #output_data_path = '/home/ubuntu/results/'
         # input_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/indata/'
         ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
-        input_data_path = '/home/steve/out/daily-split/'
-        burroughs_data_path = "/home/steve/OneDrive/burroughs_wb/data/"
-        output_data_path = '/home/steve/out/wb/'
+        input_data_path = '~/out/daily-split/'
+        burroughs_data_path = "./data/"
+        output_data_path = f'~/out/wb/{model}/'
         npz_cores = 8
         collate_cores = 4 # This can be raised once the model loops finish.
         first_day = 0
@@ -895,26 +896,26 @@ if __name__ == '__main__':
     heat_load = calc_heat_load(new_lats, slope, aspect_folded)
 
     
-    # tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
-    # # #print(tif_list[0:10], tif_list[-10:])
-    # with open('listfile.txt', 'w') as filehandle:
-    #     filehandle.writelines("%s\n" % t for t in tif_list)
-    # with open('yearbreaks', 'wb') as filehandle:
-    #     pickle.dump(year_breaks, filehandle)
-    # with open('start_year.txt', 'w') as filehandle:
-    #     filehandle.writelines("%s\n" % real_start_year)
-    # with open('end_year.txt', 'w') as filehandle:
-    #     filehandle.writelines("%s\n" % real_end_year)    
+    tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
+    # #print(tif_list[0:10], tif_list[-10:])
+    with open(f'{model}-{scenario}-listfile.txt', 'w') as filehandle:
+        filehandle.writelines("%s\n" % t for t in tif_list)
+    with open(f'{model}-{scenario}-yearbreaks', 'wb') as filehandle:
+        pickle.dump(year_breaks, filehandle)
+    with open(f'{model}-{scenario}-start_year.txt', 'w') as filehandle:
+        filehandle.writelines("%s\n" % real_start_year)
+    with open(f'{model}-{scenario}-end_year.txt', 'w') as filehandle:
+        filehandle.writelines("%s\n" % real_end_year)    
         
         
-    with open('listfile.txt', 'r') as filehandle:
-        tif_list = filehandle.read().splitlines()
-    with open ('yearbreaks', 'rb') as filehandle:
-        year_breaks = pickle.load(filehandle)
-    with open('start_year.txt', 'r') as filehandle:
-        real_start_year = int(filehandle.read())
-    with open('end_year.txt', 'r') as filehandle:
-        real_end_year = int(filehandle.read())
+    # with open('listfile.txt', 'r') as filehandle:
+    #     tif_list = filehandle.read().splitlines()
+    # with open ('yearbreaks', 'rb') as filehandle:
+    #     year_breaks = pickle.load(filehandle)
+    # with open('start_year.txt', 'r') as filehandle:
+    #     real_start_year = int(filehandle.read())
+    # with open('end_year.txt', 'r') as filehandle:
+    #     real_end_year = int(filehandle.read())
         
     years = list(range(int(real_start_year), int(real_end_year) + 1))
     year_list = [str(x) for x in years]
@@ -1079,3 +1080,32 @@ if __name__ == '__main__':
     print('Done!!')
 
 
+if __name__ == '__main__':
+    scenarios = ("rcp45", "rcp85")
+    models = (
+        "bcc-csm1-1-m",
+        "bcc-csm1-1",
+        "BNU-ESM",
+        "CanESM2",
+        "CNRM-CM5",
+        "CSIRO-Mk3-6-0",
+        "GFDL-ESM2G",
+        "GFDL-ESM2M",
+        "HadGEM2-CC365",
+        "HadGEM2-ES365",
+        "inmcm4",
+        "IPSL-CM5A-LR",
+        "IPSL-CM5A-MR",
+        "IPSL-CM5B-LR",
+        "MIROC5",
+        "MIROC-ESM-CHEM",
+        "MIROC-ESM",
+        "MRI-CGCM3",
+        "NorESM1-M"
+    )
+
+
+    combinations = tuple(itertools.product(models, scenarios))
+
+    for model, scenario in combinations:
+        print(f"{model} {scenario}")
