@@ -104,6 +104,7 @@ make_collation <- function(options) {
         print(f)
         new_rast <- make_spatraster(f, var, year)
         add(output_rast) <-  new_rast
+        file.remove(f)
     }
 
     writeCDF(output_rast, filename = out_file, overwrite = TRUE, compression = 3)
