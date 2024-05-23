@@ -1104,14 +1104,10 @@ if __name__ == '__main__':
         ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
         input_data_path = '~/out/daily-split/'
         burroughs_data_path = "./data/"
-        output_data_path = f'~/out/wb/{model}/'
+        output_data_path = f'~/out/wb/'
         collate_cores = 4 # This can be raised once the model loops finish.
         first_day = 0
         last_day = 366
-
-    for model in models:
-        if not os.path.exists(output_data_path):
-            os.makedirs(output_data_path)
         
     combinations = tuple(itertools.product(models, scenarios))
 
