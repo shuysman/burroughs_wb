@@ -266,6 +266,45 @@ aet <- rast(file.path(burroughs_data_dir, "AET_annual_sum_burroughs.nc")) |>
 cwd <- rast(file.path(burroughs_data_dir, "Deficit_annual_sum_burroughs.nc")) |>
     clamp(lower = 0, values = NA)
 
+aet_mean_2000 <- aet %>% subset(year(time(.)) >= 1980 & year(time(.)) <= 2000) %>% mean() / 10
+cwd_mean_2000 <- cwd %>% subset(year(time(.)) >= 1980 & year(time(.)) <= 2000) %>% mean() / 10
+
+ggplot() +
+##    geom_spatraster(data = shade, show.legend = FALSE) +
+##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+##    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = clamp(aet_mean_2000, lower = 100, upper = 200, values = NA), alpha = 1) +
+    scale_fill_viridis_c(option = "D") +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "1980-2000 mean annual sum of AET (mm), 100-200mm") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+ggplot() +
+##    geom_spatraster(data = shade, show.legend = FALSE) +
+##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = clamp(cwd_mean_2000, lower = 100, values = NA), alpha = 1) +
+    scale_fill_viridis_c(option = "B", direction = 1) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "1980-2000 mean annual sum of Deficit (mm), >= 100mm") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+ggplot() +
+##    geom_spatraster(data = shade, show.legend = FALSE) +
+##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = accumswe_max_2000, alpha = 1) +
+    scale_fill_viridis_c(option = "B", direction = 1) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    labs(title = "1980-2000 mean annual max of accumswe (mm), >= 100mm") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
 aet_mean <- aet %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean() / 10
 cwd_mean <- cwd %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean() / 10
 
@@ -329,4 +368,5 @@ ggplot() +
     labs(title = "2002-2022 mean annual sum of AET, areas <= 110m D") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
+
 ```
