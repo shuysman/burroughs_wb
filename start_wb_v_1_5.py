@@ -906,9 +906,7 @@ if __name__ == '__main__':
 
     heat_load = calc_heat_load(new_lats, slope, aspect_folded)
 
-    
-    tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
-    # #print(tif_list[0:10], tif_list[-10:])
+        # #print(tif_list[0:10], tif_list[-10:])
 
     tif_list_file = f'{model}-{scenario}-listfile.txt'
     yearbreaks_file = f'{model}-{scenario}-yearbreaks'
