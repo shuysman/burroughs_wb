@@ -814,7 +814,8 @@ if __name__ == '__main__':
 
     model = sys.argv[1]
     scenario = sys.argv[2]
-    
+
+    print(f"Model: {Model}, Scenario: {Scenario}")
     maca_format_string = '{year_chunk}_macav2metdata_{param}_{model_name1}_{model_name2}_{scenario}_{year1}_{year2}_CONUS_dail_reprojected_with_extent{daynumber}_resampled.tif.zip'
     subsetting_indices = [[3600,6900],[2500,7200]] #Used to clip daymet spatial extent to just CONUS for outputs since GCM data is smaller extent.
     #If change subsetting indices, then must re-create the lat, lon,x,y grids loaded below
@@ -904,24 +905,33 @@ if __name__ == '__main__':
     
     tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
     # #print(tif_list[0:10], tif_list[-10:])
-    with open(f'{model}-{scenario}-listfile.txt', 'w') as filehandle:
-        filehandle.writelines("%s\n" % t for t in tif_list)
-    with open(f'{model}-{scenario}-yearbreaks', 'wb') as filehandle:
-        pickle.dump(year_breaks, filehandle)
-    with open(f'{model}-{scenario}-start_year.txt', 'w') as filehandle:
-        filehandle.writelines("%s\n" % real_start_year)
-    with open(f'{model}-{scenario}-end_year.txt', 'w') as filehandle:
-        filehandle.writelines("%s\n" % real_end_year)    
+
+    tif_list_file = f'{model}-{scenario}-listfile.txt'
+    yearbreaks_file = f'{model}-{scenario}-yearbreaks'
+    start_year_file = f'{model}-{scenario}-start_year.txt'
+    end_year_file = f'{model}-{scenario}-end_year.txt'
+
+    if not os.exists(tif_list_file):
+        tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
         
+        with open(tif_list_file, 'w') as filehandle:
+            filehandle.writelines("%s\n" % t for t in tif_list)
+        with open(yearbreaks_file, 'wb') as filehandle:
+            pickle.dump(year_breaks, filehandle)
+        with open(start_year_file, 'w') as filehandle:
+            filehandle.writelines("%s\n" % real_start_year)
+        with open(end_year_file, 'w') as filehandle:
+            filehandle.writelines("%s\n" % real_end_year)    
         
-    # with open('listfile.txt', 'r') as filehandle:
-    #     tif_list = filehandle.read().splitlines()
-    # with open ('yearbreaks', 'rb') as filehandle:
-    #     year_breaks = pickle.load(filehandle)
-    # with open('start_year.txt', 'r') as filehandle:
-    #     real_start_year = int(filehandle.read())
-    # with open('end_year.txt', 'r') as filehandle:
-    #     real_end_year = int(filehandle.read())
+    else:
+        with open(tif_list_file, 'r') as filehandle:
+            tif_list = filehandle.read().splitlines()
+        with open (yearbreaks_file, 'rb') as filehandle:
+            year_breaks = pickle.load(filehandle)
+        with open(start_year_file, 'r') as filehandle:
+            real_start_year = int(filehandle.read())
+        with open(end_year_file, 'r') as filehandle:
+            real_end_year = int(filehandle.read())
         
     years = list(range(int(real_start_year), int(real_end_year) + 1))
     year_list = [str(x) for x in years]
