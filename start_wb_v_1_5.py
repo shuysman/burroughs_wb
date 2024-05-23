@@ -697,6 +697,7 @@ def find_file_chunks(search_first_year, search_last_year, textfilename = 'null')
     print('sfy = ', sfy, 'sly = ', sly)
     if web == False: fl = read_text_list(textfilename)
     else: fl = read_dir()
+    ## This will break for the model and scenario naming scheme used for the historical wb run
     fl = [x for x in fl if x.split('_')[2] == 'pr'] # look at only one param, pr, for this screening
     fl = [x for x in fl if x.split('_')[3] == model]
     fl = [x for x in fl if x.split('_')[5] == scenario]
