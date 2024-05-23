@@ -533,7 +533,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 def mp_write_daily(): # Subsets to just CONUS and multiplies the output_mult_factor if applicable
-    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor
+    global file_handles,day_index,var_dict, output_params, npz_cores,jobs, subsetting_indices, output_mult_factor, model, scenario
     chunk_size = npz_cores
     param_chunks = chunks(output_params,chunk_size)
     var_dict = {'PET':PET_adjusted,'AET':AET,'runoff':runoff,'Deficit':deficit,'rain':rain,'water_input_to_soil':w,'melt':melt,
