@@ -786,7 +786,7 @@ def create_tif_file_list(first_year, last_year):
     ## an issue using the aggregated daily gridMET/MACA files I'm using as input here
     ## since they are just all days from 1979-2023 and 2006 to 2099.
 
-    num_files, year_breaks = check_files_and_get_breaks(chunk[0]) ## All chunks have the same year_breaks
+    num_files, year_breaks = check_files_and_get_breaks(chunk_list[0]) ## All chunks have the same year_breaks
     for chunk in chunk_list:
         out_year_breaks.append(year_breaks)
 
