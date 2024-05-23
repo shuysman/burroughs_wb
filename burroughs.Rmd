@@ -141,6 +141,9 @@ start_wb_v_1_5.py
 3. Collate
 collate.R
 
+4. Annual sums of AET/Deficit
+annual_sum.sh using CDO
+
 
 ``` r
 
