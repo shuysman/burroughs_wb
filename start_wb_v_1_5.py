@@ -770,9 +770,9 @@ def create_tif_file_list(first_year, last_year):
     #out_file_list = []
     ##chunk_list, real_start_year, real_end_year = find_file_chunks(first_year, last_year, textfilename = textfilenamelist)
     chunk_list, real_start_year, real_end_year = find_file_chunks(first_year, last_year)
-    for chunk in chunk_list:
-        num_files, year_breaks = check_files_and_get_breaks(chunk) 
-        out_year_breaks.append(year_breaks)
+    # for chunk in chunk_list:
+    #     num_files, year_breaks = check_files_and_get_breaks(chunk) 
+    #     out_year_breaks.append(year_breaks)
         # for extentnum in range(1, num_files + 1):
         #     this_filename = set_filename_number(chunk, extentnum)
         #     out_file_list.append(this_filename)
@@ -785,6 +785,11 @@ def create_tif_file_list(first_year, last_year):
     ## all extra days in leap years are accounted for.  I don't think this should be
     ## an issue using the aggregated daily gridMET/MACA files I'm using as input here
     ## since they are just all days from 1979-2023 and 2006 to 2099.
+
+    num_files, year_breaks = check_files_and_get_breaks(chunk[0]) ## All chunks have the same year_breaks
+    for chunk in chunk_list:
+        out_year_breaks.append(year_breaks)
+        
     out_file_list, real_start_year, real_end_year = find_file_chunks(first_year, last_year)
     return out_file_list, out_year_breaks, real_start_year, real_end_year
                   
