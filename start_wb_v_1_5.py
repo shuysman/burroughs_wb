@@ -805,13 +805,16 @@ def raster2xy(raster):
     return (x, y)
     
 
-def process_model_scenario(model, scenario):
+if __name__ == '__main__':
     # If not using daymet swe, then add accumswe to output_params list. Otherwise, same output can be obtained from daymet source files.
     #multiprocessing.log_to_stderr(logging.INFO)
     
     #MACA File Format = {YEAR_CHUNK}_macav2metdata_{PARAM}_{MODEL_PART1}_{MODEL_PART2}_{SCENARIO}_{FIRST_YEAR_OF_CHUNK}_{LAST_YEAR_OF_CHUNK}_CONUS_dail_reprojected_with_extent{DAYNUMBER}_resampled.tif
     # _ Splits =               0           1           2         3           4              5              6                      7            8    9        10      11           12            13
 
+    model = sys.argv[1]
+    scenario = sys.argv[2]
+    
     maca_format_string = '{year_chunk}_macav2metdata_{param}_{model_name1}_{model_name2}_{scenario}_{year1}_{year2}_CONUS_dail_reprojected_with_extent{daynumber}_resampled.tif.zip'
     subsetting_indices = [[3600,6900],[2500,7200]] #Used to clip daymet spatial extent to just CONUS for outputs since GCM data is smaller extent.
     #If change subsetting indices, then must re-create the lat, lon,x,y grids loaded below
@@ -825,6 +828,7 @@ def process_model_scenario(model, scenario):
     width = 1292
 
     web = True
+    npz_cores = 12
         
     if web == False:
         #years = list(range(int(real_start_year), int(real_end_year) + 1))
@@ -1079,39 +1083,3 @@ def process_model_scenario(model, scenario):
     # print('Results: ',current_collate_year,result_list)
     print(bad_list)
     print('Done!!')
-
-
-if __name__ == '__main__':
-    npz_cores = 12
-            
-    scenarios = ("rcp45", "rcp85")
-    models = (
-        "bcc-csm1-1-m",
-        "bcc-csm1-1",
-        "BNU-ESM",
-        "CanESM2",
-        "CNRM-CM5",
-        "CSIRO-Mk3-6-0",
-        "GFDL-ESM2G",
-        "GFDL-ESM2M",
-        "HadGEM2-CC365",
-        "HadGEM2-ES365",
-        "inmcm4",
-        "IPSL-CM5A-LR",
-        "IPSL-CM5A-MR",
-        "IPSL-CM5B-LR",
-        "MIROC5",
-        "MIROC-ESM-CHEM",
-        "MIROC-ESM",
-        "MRI-CGCM3",
-        "NorESM1-M"
-    )
-
-    ##scenarios = ("gridmet")
-    ##models = ("historical")
-        
-    combinations = tuple(itertools.product(models, scenarios))
-
-    ## make sure to allocate npz_cores * p cpus
-    with multiprocessing.Pool(12) as p:
-        p.starmap(process_model_scenario, combinations)
