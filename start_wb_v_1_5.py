@@ -789,9 +789,8 @@ def create_tif_file_list(first_year, last_year):
     num_files, year_breaks = check_files_and_get_breaks(chunk[0]) ## All chunks have the same year_breaks
     for chunk in chunk_list:
         out_year_breaks.append(year_breaks)
-        
-    out_file_list, real_start_year, real_end_year = find_file_chunks(first_year, last_year)
-    return out_file_list, out_year_breaks, real_start_year, real_end_year
+
+    return chunk_list, out_year_breaks, real_start_year, real_end_year
                   
 
 def pixel2coord(x, y, raster):
