@@ -833,7 +833,7 @@ if __name__ == '__main__':
     width = 1292
 
     web = True
-    npz_cores = 12
+    npz_cores = 1
         
     if web == False:
         #years = list(range(int(real_start_year), int(real_end_year) + 1))
