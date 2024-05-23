@@ -1114,5 +1114,5 @@ if __name__ == '__main__':
     combinations = tuple(itertools.product(models, scenarios))
 
     ## make sure to allocate npz_cores * p cpus
-    with Pool(12) as p:
+    with multiprocessing.Pool(12) as p:
         p.map(process_model_scenario, combinations)
