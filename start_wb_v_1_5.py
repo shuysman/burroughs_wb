@@ -690,7 +690,7 @@ def read_dir():
     return out
 
 def find_file_chunks(search_first_year, search_last_year, textfilename = 'null'): # For parsing filenames of GCM data
-    global web
+    global web, model, scenario
     chunk_list = []
     sfy = int(search_first_year)
     sly = int(search_last_year)
@@ -823,7 +823,30 @@ def process_model_scenario(model, scenario):
 
     height = 1595
     width = 1292
-    
+
+    web = True
+        
+    if web == False:
+        #years = list(range(int(real_start_year), int(real_end_year) + 1))
+        input_data_path =  '/media/mt/0CED00122A266FA8/daymet_wb/downloaded_tifs/'
+        output_data_path = '/media/mt/0CED00122A266FA8/daymet_wb/new_outputs/'
+        npz_cores  = 2
+        collate_cores = 5
+        first_day = 0
+        last_day = 5
+    else:
+        #years = list(range(int(real_start_year), int(real_end_year) + 1))
+        #input_data_path = '/home/ubuntu/indata/'
+        #output_data_path = '/home/ubuntu/results/'
+        # input_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/indata/'
+        ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
+        input_data_path = os.path.join(os.environ['HOME'], 'out/daily-split/')
+        burroughs_data_path = "./data/"
+        output_data_path = os.path.join(os.environ['HOME'], 'out/wb/')
+        collate_cores = 4 # This can be raised once the model loops finish.
+        first_day = 0
+        last_day = 366
+        
     melt_factor = 4.0
     precip_fraction = 0.167
     if web == False: textfilenamelist = 'canesm2_list.txt'
@@ -1086,28 +1109,6 @@ if __name__ == '__main__':
 
     ##scenarios = ("gridmet")
     ##models = ("historical")
-    web = True
-        
-    if web == False:
-        #years = list(range(int(real_start_year), int(real_end_year) + 1))
-        input_data_path =  '/media/mt/0CED00122A266FA8/daymet_wb/downloaded_tifs/'
-        output_data_path = '/media/mt/0CED00122A266FA8/daymet_wb/new_outputs/'
-        npz_cores  = 2
-        collate_cores = 5
-        first_day = 0
-        last_day = 5
-    else:
-        #years = list(range(int(real_start_year), int(real_end_year) + 1))
-        #input_data_path = '/home/ubuntu/indata/'
-        #output_data_path = '/home/ubuntu/results/'
-        # input_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/indata/'
-        ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
-        input_data_path = os.path.join(os.environ['HOME'], 'out/daily-split/')
-        burroughs_data_path = "./data/"
-        output_data_path = os.path.join(os.environ['HOME'], 'out/wb/')
-        collate_cores = 4 # This can be raised once the model loops finish.
-        first_day = 0
-        last_day = 366
         
     combinations = tuple(itertools.product(models, scenarios))
 
