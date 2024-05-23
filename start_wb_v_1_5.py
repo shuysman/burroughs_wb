@@ -53,7 +53,7 @@ def open_tif(get_filename):
     ### and is located at the corners of 4 gridmet cells so we get an ugly
     ### grid across the whole site.  We are picking the cell that is closest to the
     ### average elev of the site.
-    value = final_array[10, -10] ## should be inside the bottom left grid cell
+    value = final_array[-10, 10] ## should be inside the bottom left grid cell
     shape = final_array.shape
     modified_array = np.full(shape, value)
 
