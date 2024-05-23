@@ -826,7 +826,6 @@ def process_model_scenario(model, scenario):
     
     melt_factor = 4.0
     precip_fraction = 0.167
-    web = True
     if web == False: textfilenamelist = 'canesm2_list.txt'
     else: textfilenamelist = 'null'
     start_time = time.time()  
@@ -840,30 +839,7 @@ def process_model_scenario(model, scenario):
     output_mult_factor = 10.0 # See def mp_write_daily(). For smaller file sizes, this multiplies all output values by 10 and stores them as 16 bit integer.
     all_ints = True # If True, all output netcdfs will be int16. If False, then categories in def launch_new_collation() are used.
     bad_list = []
-    
-    if web == False:
-        #years = list(range(int(real_start_year), int(real_end_year) + 1))
-        input_data_path =  '/media/mt/0CED00122A266FA8/daymet_wb/downloaded_tifs/'
-        output_data_path = '/media/mt/0CED00122A266FA8/daymet_wb/new_outputs/'
-        npz_cores  = 2
-        collate_cores = 5
-        first_day = 0
-        last_day = 5
-    else:
-        #years = list(range(int(real_start_year), int(real_end_year) + 1))
-        #input_data_path = '/home/ubuntu/indata/'
-        #output_data_path = '/home/ubuntu/results/'
-        # input_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/indata/'
-        ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
-        input_data_path = '~/out/daily-split/'
-        burroughs_data_path = "./data/"
-        output_data_path = f'~/out/wb/{model}/'
-        collate_cores = 4 # This can be raised once the model loops finish.
-        first_day = 0
-        last_day = 366
 
-    if not os.path.exists(output_data_path):
-        os.makedirs(output_data_path)
     # new_lats = np.load(input_data_path + 'new_lats.npz')['lat']
     # new_lons = np.load(input_data_path + 'new_lons.npz')['lon']
     # new_x = np.load(input_data_path + 'new_x.npz')['x']
@@ -1110,7 +1086,33 @@ if __name__ == '__main__':
 
     ##scenarios = ("gridmet")
     ##models = ("historical")
-    
+    web = True
+        
+    if web == False:
+        #years = list(range(int(real_start_year), int(real_end_year) + 1))
+        input_data_path =  '/media/mt/0CED00122A266FA8/daymet_wb/downloaded_tifs/'
+        output_data_path = '/media/mt/0CED00122A266FA8/daymet_wb/new_outputs/'
+        npz_cores  = 2
+        collate_cores = 5
+        first_day = 0
+        last_day = 5
+    else:
+        #years = list(range(int(real_start_year), int(real_end_year) + 1))
+        #input_data_path = '/home/ubuntu/indata/'
+        #output_data_path = '/home/ubuntu/results/'
+        # input_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/indata/'
+        ##output_data_path = '/media/smithers/shuysman/data/nps_gridded_wb/results/'
+        input_data_path = '~/out/daily-split/'
+        burroughs_data_path = "./data/"
+        output_data_path = f'~/out/wb/{model}/'
+        collate_cores = 4 # This can be raised once the model loops finish.
+        first_day = 0
+        last_day = 366
+
+    for model in models:
+        if not os.path.exists(output_data_path):
+            os.makedirs(output_data_path)
+        
     combinations = tuple(itertools.product(models, scenarios))
 
     ## make sure to allocate npz_cores * p cpus
