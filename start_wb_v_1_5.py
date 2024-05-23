@@ -819,7 +819,7 @@ if __name__ == '__main__':
     model = sys.argv[1]
     scenario = sys.argv[2]
 
-    print(f"Model: {Model}, Scenario: {Scenario}")
+    print(f"Model: {model}, Scenario: {scenario}")
     maca_format_string = '{year_chunk}_macav2metdata_{param}_{model_name1}_{model_name2}_{scenario}_{year1}_{year2}_CONUS_dail_reprojected_with_extent{daynumber}_resampled.tif.zip'
     subsetting_indices = [[3600,6900],[2500,7200]] #Used to clip daymet spatial extent to just CONUS for outputs since GCM data is smaller extent.
     #If change subsetting indices, then must re-create the lat, lon,x,y grids loaded below
