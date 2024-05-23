@@ -7,11 +7,15 @@ library(parallel)
 
 terraOptions(verbose = TRUE)
 
+### Output from start_wb_v_1_5.py script is a bunch of npz files,
+### one for each day/year/model/scenario.  Import python numpy library
+### to read in these files as arrays then work with r spatial libraries
+### to georeference and collate them into netCDFs.
 np <- import("numpy")
 
 script_data_dir <- file.path("./data/")
-input_data_dir <- file.path("~/out/burroughs/wb/")
-output_data_dir <- file.path("~/out/burroughs/collated/")
+input_data_dir <- file.path("~/out/wb/")
+output_data_dir <- file.path("~/out/collated/")
 reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 
 years <- 1979:2022 ## 2023 data is incomplete
