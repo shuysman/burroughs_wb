@@ -27,6 +27,6 @@ date
 hostname -s
 module load Mamba
 source $HOME/.bashrc
-mamba activate r-spatial
-Rscript collate.R
+mamba activate nps-wb
+python start_wb_v_1_5.py
 date
