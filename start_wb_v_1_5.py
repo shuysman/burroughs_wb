@@ -1115,4 +1115,4 @@ if __name__ == '__main__':
 
     ## make sure to allocate npz_cores * p cpus
     with multiprocessing.Pool(12) as p:
-        p.map(process_model_scenario, combinations)
+        p.starmap(process_model_scenario, combinations)
