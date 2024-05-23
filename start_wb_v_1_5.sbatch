@@ -28,7 +28,7 @@ hostname -s
 module load Mamba
 source $HOME/.bashrc
 mamba activate nps-wb
-parallel -j14 python start_wb_v_1_5.py {} {} ::: bcc-csm1-1-m bcc-csm1-1 BNU-ESM CanESM2 CNRM-CM5 CSIRO-Mk3-6-0 GFDL-ESM2G GFDL-ESM2M HadGEM2-CC365 HadGEM2-ES365 inmcm4 IPSL-CM5A-LR IPSL-CM5A-MR IPSL-CM5B-LR MIROC5 MIROC-ESM-CHEM MIROC-ESM MRI-CGCM3 NorESM1-M ::: rcp45 rcp85
+parallel -j38 python start_wb_v_1_5.py {} {} ::: bcc-csm1-1-m bcc-csm1-1 BNU-ESM CanESM2 CNRM-CM5 CSIRO-Mk3-6-0 GFDL-ESM2G GFDL-ESM2M HadGEM2-CC365 HadGEM2-ES365 inmcm4 IPSL-CM5A-LR IPSL-CM5A-MR IPSL-CM5B-LR MIROC5 MIROC-ESM-CHEM MIROC-ESM MRI-CGCM3 NorESM1-M ::: rcp45 rcp85
 #scenarios = ("gridmet")
 #models = ("historical")  
 date
