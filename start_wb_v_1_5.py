@@ -861,7 +861,9 @@ def process_model_scenario(model, scenario):
         collate_cores = 4 # This can be raised once the model loops finish.
         first_day = 0
         last_day = 366
-        
+
+    if not os.path.exists(output_data_path):
+        os.makedirs(output_data_path)
     # new_lats = np.load(input_data_path + 'new_lats.npz')['lat']
     # new_lons = np.load(input_data_path + 'new_lons.npz')['lon']
     # new_x = np.load(input_data_path + 'new_x.npz')['x']
