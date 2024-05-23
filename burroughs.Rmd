@@ -145,6 +145,22 @@ collate.R
 annual_sum.sh using CDO
 
 
+# Grids
+## Coarse
+### 4km (gridMET/MACA scale)
+- t
+- p
+- accumswe
+### 1m (DEM scale)
+- Elevation (1m lidar)
+- Slope (1m lidar derived)
+- Aspect (1m lidar derived)
+
+### Other/TBD
+- soil (1:24000 ssurgo)
+- dayl (1 km daymet, I think)
+- t50 (4km? see jennings file)
+
 ``` r
 
 ##time(output_rast) <- time(reference)
@@ -290,18 +306,6 @@ ggplot() +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
     labs(title = "1980-2000 mean annual sum of Deficit (mm), >= 100mm") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = accumswe_max_2000, alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "1980-2000 mean annual max of accumswe (mm), >= 100mm") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
