@@ -26,6 +26,31 @@ var_units <- hash('soil_water' = "mm * 10",
 ## year <- 1995
 ## var <- "Deficit"
 
+models <- c(
+    "bcc-csm1-1-m",
+    "bcc-csm1-1",
+    "BNU-ESM",
+    "CanESM2",
+    "CNRM-CM5",
+    "CSIRO-Mk3-6-0",
+    "GFDL-ESM2G",
+    "GFDL-ESM2M",
+    "HadGEM2-CC365",
+    "HadGEM2-ES365",
+    "inmcm4",
+    "IPSL-CM5A-LR",
+    "IPSL-CM5A-MR",
+    "IPSL-CM5B-LR",
+    "MIROC5",
+    "MIROC-ESM-CHEM",
+    "MIROC-ESM",
+    "MRI-CGCM3",
+    "NorESM1-M"
+)
+scenarios <- c('rcp85', 'rcp45')
+
+## models <- c("historical")
+## scenarios <- c("gridmet")
 
 make_spatraster <- function(f, var, year) {
     ### Takes a filename f for a npz file generated from start_wb_v_1_5.py and
@@ -50,6 +75,8 @@ make_spatraster <- function(f, var, year) {
 make_collation <- function(options) {
     var <- options[1]
     year <- options[2]
+    model <- options[3]
+    scenario <- options[4]
     
     out_file = file.path(output_data_dir, glue("{var}_{year}_historical_gridmet_burroughs.nc"))
     print(out_file)
@@ -82,7 +109,7 @@ make_collation <- function(options) {
 }
 
 
-options <- expand.grid(var = keys(var_units), year = years) %>%
+options <- expand.grid(var = keys(var_units), year = years, model = models, scenario = scenarios) %>%
     t() %>%
     data.frame()
 
