@@ -913,7 +913,9 @@ if __name__ == '__main__':
     start_year_file = f'{model}-{scenario}-start_year.txt'
     end_year_file = f'{model}-{scenario}-end_year.txt'
 
-    if not os.exists(tif_list_file):
+    if not os.path.exists(tif_list_file):
+        ### create_tif_file_list takes so long to run.  Let's cache the results
+        ### in case we have to restart a run
         tif_list, year_breaks, real_start_year, real_end_year = create_tif_file_list(first_year, last_year)
         
         with open(tif_list_file, 'w') as filehandle:
