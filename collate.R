@@ -102,7 +102,7 @@ make_collation <- function(options) {
                         resolution = res(reference),
                         )
 
-   in_files <- str_extract_all(wb_files, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz")) |> str_sort(numeric = TRUE)
+   in_files <- str_subset(wb_files, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz")) |> str_sort(numeric = TRUE)
 
     for (f in in_files) {
         print(f)
