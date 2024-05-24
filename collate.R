@@ -11,7 +11,7 @@ terraOptions(verbose = TRUE)
 ### one for each day/year/model/scenario.  Import python numpy library
 ### to read in these files as arrays then work with r spatial libraries
 ### to georeference and collate them into netCDFs.
-use_condaenv(condaenv = nps-wb, conda = "auto", required = NULL)
+use_condaenv(condaenv = "nps-wb", conda = "auto", required = NULL)
 np <- import("numpy")
 
 script_data_dir <- file.path("./data/")
