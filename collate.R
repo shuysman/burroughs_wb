@@ -18,7 +18,9 @@ input_data_dir <- file.path("~/out/wb/")
 output_data_dir <- file.path("~/out/collated/")
 reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 
-years <- 1979:2022 ## 2023 data is incomplete
+historical_years <- 1979:2022 ## 2023 data is incomplete
+projection_years <- 2006:2099
+
 var_units <- hash('soil_water' = "mm * 10",
                   'PET' = "mm * 10",
                   'AET' = "mm * 10",
@@ -27,10 +29,11 @@ var_units <- hash('soil_water' = "mm * 10",
                   'agdd' = "GDD",
                   'accumswe' = "mm * 10",
                   'rain' = "mm * 10")
-## year <- 1995
-## var <- "Deficit"
 
-models <- c(
+historical_models <- c("historical")
+historical_scenarios <- c("gridmet")
+
+projection_models <- c(
     "bcc-csm1-1-m",
     "bcc-csm1-1",
     "BNU-ESM",
@@ -51,15 +54,15 @@ models <- c(
     "MRI-CGCM3",
     "NorESM1-M"
 )
-scenarios <- c('rcp85', 'rcp45')
+projection_scenarios <- c('rcp85', 'rcp45')
 
-## models <- c("historical")
-## scenarios <- c("gridmet")
 
 make_spatraster <- function(f, var, year) {
-    ### Takes a filename f for a npz file generated from start_wb_v_1_5.py and
-    ### creates a SpatRaster with crs and extent set from the reference
-    ### and date properly set
+    ## Takes a filename f for a npz file generated from start_wb_v_1_5.py and
+    ## creates a SpatRaster with crs and extent set from the reference
+    ## and date properly set
+    ## npz files are daily arrays of water balance outputs
+    
     yday <- str_split_i(f, pattern = "_", i = 2) %>% as.numeric() + 1
     date <- as_date(glue("{year}-{yday}"), format = "%Y-%j")
     
@@ -77,6 +80,8 @@ make_spatraster <- function(f, var, year) {
 
 
 make_collation <- function(options) {
+    ## Collate together npz files (daily arrays of wb model outputs) in input dir
+    ## Convert each npz into a spatraster, then append to output raster 
     var <- options[1]
     year <- options[2]
     model <- options[3]
@@ -114,14 +119,24 @@ make_collation <- function(options) {
 }
 
 
-options <- expand.grid(var = keys(var_units), year = years, model = models, scenario = scenarios) %>%
+historical_options <- expand.grid(var = keys(var_units),
+                                  year = historical_years,
+                                  model = historical_models,
+                                  scenario = historical_scenarios) %>%
     t() %>%
     data.frame()
 
-mclapply(options,
+mclapply(historical_options,
          FUN = make_collation,
-         mc.cores = 8) ## Seems like I only have enough RAM to run 1 of these at a time, the writeCDF stage takes up ~80G
+         mc.cores = 8)
 
-## for (option in options) {
-##     make_collation(option)
-## }
+projection_options <- expand.grid(var = keys(var_units),
+                                  year = projection_years,
+                                  model = projection_models,
+                                  scenario = projection_scenarios) %>%
+    t() %>%
+    data.frame()
+
+mclapply(projection_options,
+         FUN = make_collation,
+         mc.cores = 8) 
