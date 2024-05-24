@@ -26,7 +26,7 @@ var_units <- hash(
     ##'soil_water' = "mm * 10",
     ##'PET' = "mm * 10",
     'AET' = "mm * 10",
-    'Deficit' = "mm * 10",
+    'Deficit' = "mm * 10"
     ##'runoff' = "mm * 10",
     ##'agdd' = "GDD",
     ##'accumswe' = "mm * 10",
