@@ -22,14 +22,16 @@ reference <- rast(file.path(script_data_dir, "1980_dayl_gye.nc4"))
 historical_years <- 1979:2022 ## 2023 data is incomplete
 projection_years <- 2006:2099
 
-var_units <- hash('soil_water' = "mm * 10",
-                  'PET' = "mm * 10",
-                  'AET' = "mm * 10",
-                  'Deficit' = "mm * 10",
-                  'runoff' = "mm * 10",
-                  'agdd' = "GDD",
-                  'accumswe' = "mm * 10",
-                  'rain' = "mm * 10")
+var_units <- hash(
+    ##'soil_water' = "mm * 10",
+    ##'PET' = "mm * 10",
+    'AET' = "mm * 10",
+    'Deficit' = "mm * 10",
+    ##'runoff' = "mm * 10",
+    ##'agdd' = "GDD",
+    ##'accumswe' = "mm * 10",
+    ##'rain' = "mm * 10"
+    )
 
 historical_models <- c("historical")
 historical_scenarios <- c("gridmet")
@@ -118,7 +120,7 @@ make_collation <- function(options) {
 }
 
 
-wb_files <- list.files(input_data_dir, pattern = glue(".*.npz"), full.names = TRUE)
+wb_files <- list.files(input_data_dir, full.names = TRUE)
 
 historical_options <- expand.grid(var = keys(var_units),
                                   year = historical_years,
