@@ -103,7 +103,7 @@ make_collation <- function(options) {
 
     ##writeCDF(output_rast, filename = out_file, overwrite = TRUE)
 
-    wb_files <- list.files(input_data_dir, pattern = glue("{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
+    wb_files <- list.files(input_data_dir, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
 
     for (f in wb_files) {
         print(f)
