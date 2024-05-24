@@ -102,10 +102,9 @@ make_collation <- function(options) {
                         resolution = res(reference),
                         )
 
-    ## Input files
-    wb_files <- list.files(input_data_dir, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
+   in_files <- str_extract_all(wb_files, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz")) |> str_sort(numeric = TRUE)
 
-    for (f in wb_files) {
+    for (f in in_files) {
         print(f)
         new_rast <- make_spatraster(f, var, year)
         add(output_rast) <-  new_rast
@@ -118,6 +117,8 @@ make_collation <- function(options) {
     return(1)
 }
 
+
+wb_files <- list.files(input_data_dir, pattern = glue(".*.npz"), full.names = TRUE)
 
 historical_options <- expand.grid(var = keys(var_units),
                                   year = historical_years,
