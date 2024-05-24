@@ -63,7 +63,7 @@ make_spatraster <- function(f, var, year) {
     ## and date properly set
     ## npz files are daily arrays of water balance outputs
     
-    yday <- str_split_i(f, pattern = "_", i = 2) %>% as.numeric() + 1
+    yday <- str_split_i(f, pattern = "_", i = 4) %>% as.numeric() + 1
     date <- as_date(glue("{year}-{yday}"), format = "%Y-%j")
     
     npz <- np$load(f)
@@ -101,8 +101,7 @@ make_collation <- function(options) {
                         resolution = res(reference),
                         )
 
-    ##writeCDF(output_rast, filename = out_file, overwrite = TRUE)
-
+    ## Input files
     wb_files <- list.files(input_data_dir, pattern = glue("{model}_{scenario}_{year}_.*_{var}.npz"), full.names = TRUE) |> str_sort(numeric = TRUE)
 
     for (f in wb_files) {
