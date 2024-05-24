@@ -87,7 +87,7 @@ make_collation <- function(options) {
     model <- options[3]
     scenario <- options[4]
     
-    out_file = file.path(output_data_dir, glue("{var}_{year}_historical_gridmet_burroughs.nc"))
+    out_file = file.path(output_data_dir, glue("{model}_{scenario}_{var}_{year}_burroughs.nc"))
     print(out_file)
     
     output_rast <- rast(nrows = nrow(reference),
