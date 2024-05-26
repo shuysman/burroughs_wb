@@ -94,7 +94,7 @@ make_collation <- function(options) {
     print(out_file)
 
     ## Fix missing files
-    if file.exists(out_file) {
+    if (file.exists(out_file)) {
         print(glue("File exists {out_file}"))
         return(2)
     }
