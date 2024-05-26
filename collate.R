@@ -148,4 +148,4 @@ projection_options <- expand.grid(var = keys(var_units),
 
 mclapply(projection_options,
          FUN = make_collation,
-         mc.cores = 8) 
+         mc.cores = 4) 
