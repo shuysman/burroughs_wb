@@ -128,24 +128,24 @@ make_collation <- function(options) {
 
 wb_files <- list.files(input_data_dir, full.names = TRUE)
 
-historical_options <- expand.grid(var = keys(var_units),
-                                  year = historical_years,
-                                  model = historical_models,
-                                  scenario = historical_scenarios) %>%
-    t() %>%
-    data.frame()
-
-mclapply(historical_options,
-         FUN = make_collation,
-         mc.cores = 1)
-
-## projection_options <- expand.grid(var = keys(var_units),
-##                                   year = projection_years,
-##                                   model = projection_models,
-##                                   scenario = projection_scenarios) %>%
+## historical_options <- expand.grid(var = keys(var_units),
+##                                   year = historical_years,
+##                                   model = historical_models,
+##                                   scenario = historical_scenarios) %>%
 ##     t() %>%
 ##     data.frame()
 
-## mclapply(projection_options,
+## mclapply(historical_options,
 ##          FUN = make_collation,
-##          mc.cores = 8) 
+##          mc.cores = 8)
+
+projection_options <- expand.grid(var = keys(var_units),
+                                  year = projection_years,
+                                  model = projection_models,
+                                  scenario = projection_scenarios) %>%
+    t() %>%
+    data.frame()
+
+mclapply(projection_options,
+         FUN = make_collation,
+         mc.cores = 8) 
