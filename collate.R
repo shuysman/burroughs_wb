@@ -92,7 +92,13 @@ make_collation <- function(options) {
     
     out_file = file.path(output_data_dir, glue("{model}_{scenario}_{var}_{year}_burroughs.nc"))
     print(out_file)
-    
+
+    ## Fix missing files
+    if file.exists(out_file) {
+        print(glue("File exists {out_file}"))
+        return(2)
+    }
+        
     output_rast <- rast(nrows = nrow(reference),
                         ncols = ncol(reference),
                         ## xmin = xmin(reference),
@@ -131,15 +137,15 @@ historical_options <- expand.grid(var = keys(var_units),
 
 mclapply(historical_options,
          FUN = make_collation,
-         mc.cores = 8)
+         mc.cores = 1)
 
-projection_options <- expand.grid(var = keys(var_units),
-                                  year = projection_years,
-                                  model = projection_models,
-                                  scenario = projection_scenarios) %>%
-    t() %>%
-    data.frame()
+## projection_options <- expand.grid(var = keys(var_units),
+##                                   year = projection_years,
+##                                   model = projection_models,
+##                                   scenario = projection_scenarios) %>%
+##     t() %>%
+##     data.frame()
 
-mclapply(projection_options,
-         FUN = make_collation,
-         mc.cores = 8) 
+## mclapply(projection_options,
+##          FUN = make_collation,
+##          mc.cores = 8) 
