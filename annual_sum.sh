@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
-in_dir="~/out/collated/"
-out_dir="~/out/sums/"
+export in_dir="${HOME}/out/collated"
+export out_dir="${HOME}/out/sums"
 
 vars="AET Deficit"
 models="bcc-csm1-1-m bcc-csm1-1 BNU-ESM CanESM2 CNRM-CM5 CSIRO-Mk3-6-0 GFDL-ESM2G GFDL-ESM2M HadGEM2-CC365 HadGEM2-ES365 inmcm4 IPSL-CM5A-LR IPSL-CM5A-MR IPSL-CM5B-LR MIROC5 MIROC-ESM-CHEM MIROC-ESM MRI-CGCM3 NorESM1-M"
@@ -16,12 +16,15 @@ calc_annual_sum () {
     scenario=$2
     var=$3
 
-    wb_files=$(find $in_dir -type f -name "${model}_${scenario}_${var}_*_burroughs.nc" -print)
+    echo $model $scenario $var
     
-    parallel -j 12 cdo yearsum {} {}_sum.nc ::: $wb_files
-    out_files=$(find $in_dir -type f -name "${model}_${scenario}_${var}*_sum.nc" -print)
+    for file in ${in_dir}/${model}_${scenario}_${var}_*_burroughs.nc; do
+	cdo yearsum $file "${file}_sum.nc"
+    done
 
-    cdo mergetime $out_files "${out_dir}/${model}_${scenario}_${var}_annual_sum_burroughs.nc"
+    cdo mergetime ${in_dir}/${model}_${scenario}_${var}*_sum.nc "${out_dir}/${model}_${scenario}_${var}_annual_sum_burroughs.nc"
 }
 
-parallel -j 12 calc_annual_sum {} ::: $vars ::: $models ::: $scenarios
+export -f calc_annual_sum
+
+parallel -j 96 calc_annual_sum {} ::: $models ::: $scenarios ::: $vars
