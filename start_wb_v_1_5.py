@@ -748,7 +748,7 @@ if __name__ == '__main__':
     if (np.nanmax(elevation) > 5700) or (np.nanmin(elevation) < 0): raise Exception('Do you have the wrong elevation file? Terminating.')
     ##heat_load = np.load(input_data_path + 'heat_load_based_on_etopo1.npy')
     ##soil_whc = get_soil_whc()
-    soil_whc = gdal.Open(burroughs_data_path + "soil_whc_150_aligned_clipped.tif").ReadAsArray()
+    soil_whc = gdal.Open(burroughs_data_path + "soil_whc_025_aligned_clipped.tif").ReadAsArray() 
     soil_water = np.copy(soil_whc) # Initialize soil values at full.
     #intercept_file = np.load('intercept1_from_senay.npz') # Vegetation intercept layer from Gabriel Senay et al. pers. comm.
     #Igrid = intercept_file['intercept']
