@@ -28,6 +28,7 @@ library(terra)
 library(tidyterra)
 library(ggnewscale)
 library(ggspatial)
+library(ggpubr)
 library(kableExtra)
 
 terraOptions(verbose = TRUE,
@@ -53,6 +54,10 @@ units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cas
 ```
 
 # Introduction
+
+`r crs(elev, proj = TRUE)`
+
+`r st_bbox(elev)`
 
 ## Planting Units
 
@@ -129,7 +134,7 @@ Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference
   Results in millions of layers for each combo of day/year/gcm/scenario/variable
 - Soil
 SSURGO data from Curve Number Generator in QGIS
-150 cm depth AWC
+25 cm depth AWC
 
 2. Run WB
 start_wb_v_1_5.py
@@ -160,160 +165,122 @@ annual_sum.sh using CDO
 
 ## Historical
 
-``` {r historical, eval = FALSE, include = FALSE}
-gridmet_data_dir <- file.path("~/out/")
+``` {r historical, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
+gridmet_data_dir <- file.path("~/out/sums/")
 
 aet <- rast(file.path(gridmet_data_dir, "historical_gridmet_AET_annual_sum_burroughs.nc")) |>
     clamp(lower = 0, values = NA) / 10
 cwd <- rast(file.path(gridmet_data_dir, "historical_gridmet_Deficit_annual_sum_burroughs.nc")) |>
     clamp(lower = 0, values = NA) / 10
 
+
+### 1988 Drought Year
 aet_1988 <- aet %>% subset(year(time(.)) == 1988)
 cwd_1988 <- cwd %>% subset(year(time(.)) == 1988)
 
-aet_mean_2000 <- aet %>% subset(year(time(.)) >= 1980 & year(time(.)) <= 2000) %>% mean()
-cwd_mean_2000 <- cwd %>% subset(year(time(.)) >= 1980 & year(time(.)) <= 2000) %>% mean()
+### Previous 20 years before current
+aet_mean_2002 <- aet %>% subset(year(time(.)) >= 1982 & year(time(.)) <= 2002) %>% mean()
+cwd_mean_2002 <- cwd %>% subset(year(time(.)) >= 1982 & year(time(.)) <= 2002) %>% mean()
 
-animate(aet, main = paste0("AET ", 1979:2022))
-animate(cwd, main = paste0("CWD ", 1979:2022))
+### Last 20 years
+aet_mean_2022 <- aet %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean()
+cwd_mean_2022 <- cwd %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean()
 
-## aet_plot <- ggplot() +
-## ##    geom_spatraster(data = shade, show.legend = FALSE) +
-## ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-## ##    ggnewscale::new_scale_fill() +
-##     geom_spatraster(data = clamp(aet, lower = 100, upper = 200, values = NA), alpha = 1) +
-##     scale_fill_viridis_c(option = "D") +
-##     geom_sf(data = units, fill = NA, lwd = 1.5) +
-##     geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-##     labs(title = "AET") +
-##     annotation_north_arrow(aes(location = "tr")) +
-##     annotation_scale(aes(location = "br")) +
-##     transition_states(names)
+unit_stats <- as_tibble(units) %>% bind_cols(
+                                       aet_1988 = zonal(aet_1988, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                                       cwd_1988 = zonal(cwd_1988, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                                       aet_2002 = zonal(aet_mean_2002, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                                       cwd_2002 = zonal(cwd_mean_2002, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                                       aet_2022 = zonal(aet_mean_2022, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                                       cwd_2022 = zonal(cwd_mean_2022, vect(units), fun = "mean", na.rm = TRUE)[[1]]
+                                   )
 
-## gganimate::animate(
-##   aet_plot,
-##   width = 12,
-##   height = 8,
-##   renderer=gifski_renderer("map.gif")
-##   )
+knitr::kable(select(unit_stats,
+                    Unit, DESCRIPTIO, aet_1988:cwd_2022),
+             digits = 2)
 
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-##    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_mean_2000, lower = 100, upper = 200, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "D") +
+
+aet_scale <-
+    scale_fill_viridis_c(option = "D", limits = c(0,300))
+
+cwd_scale <-
+    scale_fill_viridis_c(option = "B", limits = c(0,350))
+
+aet_2002_plot <- ggplot() +
+    geom_spatraster(data = aet_mean_2002, alpha = 1) +
+    aet_scale + 
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "1980-2000 mean annual sum of AET (mm), 100-200mm") +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "1982-2002 mean annual sum of AET (mm)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+cwd_2002_plot <- ggplot() +
     ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_mean_2000, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
+    geom_spatraster(data =cwd_mean_2002, alpha = 1) +
+    cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "1980-2000 mean annual sum of Deficit (mm), >= 100mm") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-aet_mean <- aet %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean()
-cwd_mean <- cwd %>% subset(year(time(.)) >= 2002 & year(time(.)) <= 2022) %>% mean()
-
-pal_greys <- hcl.colors(1000, "Grays")
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-##    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_mean, lower = 100, upper = 200, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "D") +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of AET (mm), 100-200mm") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-ggsave("burroughs_2002-2022_aet.png", width=16, height=12)
-
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_mean, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of Deficit (mm), >= 100mm") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-ggsave("burroughs_2002-2022_deficit.png", width=16, height=12)
-
-
-zonal(aet_mean, vect(units), fun = "mean", na.rm = TRUE)
-zonal(cwd_mean, vect(units), fun = "mean", na.rm = TRUE)
-
-cwd_mean_thresh <- cwd_mean <= 175
-
-ggplot() +
-    geom_spatraster(data = shade, show.legend = FALSE) +
-##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = cwd_mean, alpha = 0.85) +
-    scale_fill_viridis_b(option = "F", direction = 1, breaks = c(0,50,100,150,200,250,300)) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of Deficit, areas <= 110m D") +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "1982-2002 mean annual sum of Deficit (mm)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 
-ggplot() +
-    geom_spatraster(data = shade, show.legend = FALSE) +
-##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = aet_mean, alpha = 0.85) +
-    scale_fill_viridis_b(option = "D", direction = 1, breaks = c(50,100,150,200)) +
+aet_2022_plot <- ggplot() +
+    geom_spatraster(data = aet_mean_2022, alpha = 1) +
+    aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of AET, areas <= 110m D") +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of AET (mm)") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+##ggsave("burroughs_2002-2022_aet.png", width=16, height=12)
+
+
+cwd_2022_plot <- ggplot() +
+    geom_spatraster(data = cwd_mean_2022, alpha = 1) +
+    cwd_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "2002-2022 mean annual sum of Deficit (mm)") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+##ggsave("burroughs_2002-2022_deficit.png", width=16, height=12)
+
+
+
+aet_1988_plot <- ggplot() +
+    geom_spatraster(data = aet_1988, alpha = 1) +
+    theme(legend.position="bottom") +
+    aet_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "1988 AET (Drought Year)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-##    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_1988, lower = 50, upper = 200, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "D") +
+cwd_1988_plot <- ggplot() +
+    geom_spatraster(data = cwd_1988, alpha = 1) +
+    theme(legend.position="bottom") +
+    cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "1988 AET") +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "1988 CWD (Drought Year)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-##    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_1988, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B") +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
-    labs(title = "1988 CWD") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
+ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
+ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
+
+ggarrange(aet_1988_plot, cwd_1988_plot)
 
 
+```
+
+
+``` {r eval = F, include = F}
 current <- 2006:2024
 near <- 2025:2049
 mid <- 2050:2074
@@ -357,7 +324,7 @@ ggplot() +
     geom_spatraster(data = clamp(cwd_ens45_near, lower = 100, values = NA), alpha = 1) +
     scale_fill_viridis_c(option = "B", direction = 1) +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, Near-future (2025-2049)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -369,7 +336,7 @@ ggplot() +
     geom_spatraster(data = clamp(cwd_ens45_mid, lower = 100, values = NA), alpha = 1) +
     scale_fill_viridis_c(option = "B", direction = 1) +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, Mid-century (2050-2074)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -381,7 +348,7 @@ ggplot() +
     geom_spatraster(data = clamp(cwd_ens45_end, lower = 100, values = NA), alpha = 1) +
     scale_fill_viridis_c(option = "B", direction = 1) +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, End-century (2075-2099)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -396,7 +363,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, End-century (2075-2099)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -410,7 +377,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -424,7 +391,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -438,7 +405,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -453,7 +420,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp85_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP8.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -467,7 +434,7 @@ ggplot() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "G") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean AET end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
@@ -482,7 +449,7 @@ ggplot() +
     geom_spatraster(data = aet_rcp85_change_from_baseline, alpha = 1) +
     scale_fill_viridis_c(option = "E") +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = DESCRIPTIO), fill = NA) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP8.5 Ensemble Mean AET end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
