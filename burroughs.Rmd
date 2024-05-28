@@ -21,16 +21,14 @@ body {
 }
 ```
 
-
-# Planting Units
-
-```{r planting-units, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
+``` {r setup, include = FALSE}
 library(tidyverse)
 library(sf)
 library(terra)
 library(tidyterra)
 library(ggnewscale)
 library(ggspatial)
+library(kableExtra)
 
 terraOptions(verbose = TRUE,
              memfrac = 0.9)
@@ -39,7 +37,7 @@ elev <- rast("./data/burroughs_creek_USGS1m_clipped_nad83.tif")
 aspect <- rast("./data/planting_unit_aspect.tif")
 slope <- rast("./data/planting_unit_slope.tif")
 shade <- rast("./data/burroughs_creek_USGS1m_clipped_hillshade_nad83.tif")
-soil <- rast("./data/soil_whc_150_aligned_clipped.tif") %>% round(2) %>% clamp(lower = 0, values = NA)
+soil <- rast("./data/soil_whc_025_aligned_clipped.tif") %>% round(2) %>% clamp(lower = 0, values = NA)
 
 pal_greys <- hcl.colors(1000, "Grays")
 
@@ -52,11 +50,16 @@ units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cas
                          slope_min = zonal(slope, vect(units), fun = "min", na.rm = TRUE)[[1]],
                          aspect_mean = zonal(aspect, vect(units), fun = "mean", na.rm = TRUE)[[1]]
                          ))
+```
 
+# Introduction
 
+## Planting Units
+
+```{r planting-units, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
 knitr::kable(select(as_tibble(units),
-                    Description = DESCRIPTIO,
                     Unit,
+                    Description = DESCRIPTIO,
                     Acres = ACRES,
                     elev_mean,
                     elev_max,
@@ -64,7 +67,8 @@ knitr::kable(select(as_tibble(units),
                     slope_mean,
                     slope_max,
                     slope_min,
-                    aspect_mean))
+                    aspect_mean),
+             digits = 2)
 
 ggplot() +
     geom_spatraster(data = shade, show.legend = FALSE) +
@@ -73,13 +77,17 @@ ggplot() +
     ggnewscale::new_scale_fill() +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Burroughs WBP Planting Units") +
+    labs(title = "Burroughs WBP Planting Units Hillshade") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
+```
 
+
+##  Soils
+``` {r soils, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
 ggplot() +
     geom_spatraster(data = soil) +
-    labs(title = "Burroughs WBP Planting Unit Soil WHC in cm to 150cm soild depth") +
+    labs(title = "Burroughs WBP Planting Unit Soil WHC (mm) to 25cm soil depth") +
     scale_fill_viridis_b() +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
@@ -87,7 +95,26 @@ ggplot() +
     annotation_scale(aes(location = "br"))
 ```
 
-# Analysis
+Soils range from `r global(soil, min, na.rm = TRUE)[[1]]` to `r global(soil, max, na.rm = TRUE)[[1]]` mm whc at 25 cm soil depth. Soil water capacity at 25 cm was selected because the application of this report is for planting seedlings and mature whitebark pine trees typically have shallow root systems not typically penetrating more than 30cm of soil (https://www.fs.usda.gov/database/feis/plants/tree/pinalb/all.html).
+
+``` {r soils-zonals, echo = FALSE}
+zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
+    cbind(Unit = units$Unit, .) %>%
+    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)")) %>%
+    kable_styling(full_width = F)
+```
+
+
+## T50
+
+``` {r include = FALSE}
+t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]]
+```
+
+Jennings *T*~50~ coeffcient used for all cells = `r t50`
+
+# Methods
+## Analysis
 1. Prepare layers
 Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference
 - DEM
@@ -114,8 +141,7 @@ collate.R
 annual_sum.sh using CDO
 
 
-# Grids
-## Coarse
+## Grids
 ### 4km (gridMET/MACA scale)
 - t
 - p
@@ -130,7 +156,9 @@ annual_sum.sh using CDO
 - dayl (1 km daymet, I think)
 - t50 (4km? see jennings file)
 
+# Results
 
+## Historical
 
 ``` {r historical, eval = FALSE, include = FALSE}
 gridmet_data_dir <- file.path("~/out/")
