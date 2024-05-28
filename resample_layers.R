@@ -1,4 +1,5 @@
 library(tidyverse)
+library(sf)
 library(terra)
 
 data_dir <- file.path("./data")
@@ -18,3 +19,10 @@ t50 <- resample(t50, reference, method = "near")
 t50 <- crop(t50, reference)
 
 writeRaster(t50, file.path(data_dir, "jennings_t50_coefficients.tif"))
+
+
+soils <- st_read("/home/steve/ssurgo_soils.gpkg") %>%
+    vect() %>%
+    rasterize(reference, field = "aws_025_dbl") * 10 ## cm to mm
+
+writeRaster(soils, "./data/soil_whc_025_aligned_clipped.tif")
