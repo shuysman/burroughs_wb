@@ -28,5 +28,5 @@ hostname -s
 module load Mamba
 source $HOME/.bashrc
 mamba activate r-spatial
-Rscript split_ncs.R
+Rscript 00_split_ncs.R
 date
