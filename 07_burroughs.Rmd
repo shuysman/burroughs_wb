@@ -30,6 +30,9 @@ library(ggnewscale)
 library(ggspatial)
 library(ggpubr)
 library(kableExtra)
+library(httpgd)
+
+hgd()
 
 terraOptions(verbose = TRUE,
              memfrac = 0.9)
@@ -289,7 +292,7 @@ cwd_scale <-
     scale_fill_viridis_c(option = "B", limits = c(0, 350))
 
 aet_2002_plot <- ggplot() +
-    geom_spatraster(data = aet_mean_2002, alpha = 1) +
+    geom_spatraster(data = aet_2002, alpha = 1) +
     aet_scale + 
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
@@ -299,7 +302,7 @@ aet_2002_plot <- ggplot() +
 
 cwd_2002_plot <- ggplot() +
     ggnewscale::new_scale_fill() +
-    geom_spatraster(data =cwd_mean_2002, alpha = 1) +
+    geom_spatraster(data =cwd_2002, alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
@@ -309,7 +312,7 @@ cwd_2002_plot <- ggplot() +
 
 
 aet_2022_plot <- ggplot() +
-    geom_spatraster(data = aet_mean_2022, alpha = 1) +
+    geom_spatraster(data = aet_2022, alpha = 1) +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
@@ -320,7 +323,7 @@ aet_2022_plot <- ggplot() +
 
 
 cwd_2022_plot <- ggplot() +
-    geom_spatraster(data = cwd_mean_2022, alpha = 1) +
+    geom_spatraster(data = cwd_2022, alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
@@ -547,8 +550,8 @@ n_sites <- 1000000
 
 (n_sites / ncell(elev)) * 100
 
-highest_aet <- selectHighest(aet_mean_2022, n = n_sites)
-lowest_cwd <- selectHighest(cwd_mean_2022, n = n_sites, low = TRUE)
+highest_aet <- selectHighest(aet_2022, n = n_sites)
+lowest_cwd <- selectHighest(cwd_2022, n = n_sites, low = TRUE)
 
 best_sites <- highest_aet & lowest_cwd
 
@@ -556,8 +559,8 @@ best_sites <- highest_aet & lowest_cwd
 
 (n_best_sites / ncell(elev)) * 100
 
-(mean_aet <- global(mask(aet_mean_2022, highest_aet), fun = "mean", na.rm = TRUE))
-(mean_cwd <- global(mask(cwd_mean_2022, lowest_cwd), fun = "mean", na.rm = TRUE))
+(mean_aet <- global(mask(aet_2022, highest_aet), fun = "mean", na.rm = TRUE))
+(mean_cwd <- global(mask(cwd_2022, lowest_cwd), fun = "mean", na.rm = TRUE))
 
 
 ggplot() +
@@ -581,4 +584,9 @@ bind_cols(units,
     select(Unit, sum_area_best_sites) %>%
     knitr::kable(digits = 2)
 ```
-Optimal planting locations will have high AET and low CWD, to maximize potential growth and minimize drought stress.  This algorithm selects for the n = `r n_sites` pixels with the highest AET and n with lowest CWD.  The logical union of these layers is taken to find the best sites, that simultaneuous have the highest AET and lowest CWD possible, representing `r round(n_best_sites / ncell(elev), 2)` of the landscape.  
+Optimal planting locations will have high AET and low CWD, to maximize potential growth and minimize drought stress.  This algorithm selects for the n = `r n_sites` pixels with the highest AET and n with lowest CWD.  The logical union of these layers is taken to find the best sites, that simultaneously have the highest AET and lowest CWD possible, representing `r round(n_best_sites / ncell(elev), 2)` of the landscape.  
+
+
+<!-- Local Variables: -->
+<!-- jinx-local-words: "ncell" -->
+<!-- End: -->
