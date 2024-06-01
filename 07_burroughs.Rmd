@@ -30,9 +30,6 @@ library(ggnewscale)
 library(ggspatial)
 library(ggpubr)
 library(kableExtra)
-library(httpgd)
-
-hgd()
 
 terraOptions(verbose = TRUE,
              memfrac = 0.9)
