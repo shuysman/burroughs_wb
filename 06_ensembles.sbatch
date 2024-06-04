@@ -27,6 +27,6 @@ date
 hostname -s
 module load Mamba
 source $HOME/.bashrc
-mamba activate co
+mamba activate cdo
 ./06_ensembles.sh
 date
