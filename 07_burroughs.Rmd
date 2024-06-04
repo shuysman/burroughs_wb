@@ -583,7 +583,6 @@ bind_cols(units,
 ```
 Optimal planting locations will have high AET and low CWD, to maximize potential growth and minimize drought stress.  This algorithm selects for the n = `r n_sites` pixels with the highest AET and n with lowest CWD.  The logical union of these layers is taken to find the best sites, that simultaneously have the highest AET and lowest CWD possible, representing `r round(n_best_sites / ncell(elev), 2)` of the landscape.  
 
-
 <!-- Local Variables: -->
 <!-- jinx-local-words: "ncell" -->
 <!-- End: -->
