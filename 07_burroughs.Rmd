@@ -1,9 +1,10 @@
 ---
-title: 'Burroughs Creek WBP Planting Unit Microsites'
-author: "Stephen Huysman"
+title: 'Burroughs Creek WBP Planting Microsites'
+author: 
+  - Stephen Huysman, shuysman@gmail.com
 email: "shuysman@gmail.com"
 date: "`r Sys.Date()`"
-fontsize: 10pt 
+fontsize: 11pt 
 bibliography: library.bib
 csl: global-ecology-and-biogeography.csl
 link-citations: true
@@ -80,7 +81,7 @@ cwd_change_scale <-
 
 # Introduction
 This report presents historical (1979-2022) and projected (2006-2099)
-water balance for the Burroughs Creek site \@ref(fig:planting-units) in Shoshone National
+water balance for the Burroughs Creek site (Figure \@ref(fig:planting-units)) in Shoshone National
 Forest.  This location was selected to plant whitebark pine (*Pinus
 albicaulis*) seedlings in summer 2024.  The site previously burned in
 August 30, 2013 in the Burroughs wildfire (MTBS ID
@@ -108,15 +109,29 @@ spatial magnitude
 [@stephensonClimaticControlVegetation1990;@stephensonActualEvapotranspirationDeficit1998].
 
 Fine-scale variation in topography and soil features has been shown to
-strongly affect modeled water balance [@dyerGISBasedWaterBalance2019].
-Our objective was to use historical and projected climate data to model the
-climatic water balance of the Burroughs Creek site using the highest
-resolution topographic and soil survey data available to understand
-fine-scale spatial variation in the climatic water balance across the site in
-order to guide planting of whitebark pine seedlings.
+strongly affect modeled water balance
+[@dyerGISBasedWaterBalance2019]. These fine-scale variations in water
+balance are intuitively understood by planters, who often select
+planting locations based on microsite features such as presence of
+logs or boulders that provide shade, decreasing evaporative demands.
+Our objective was to use historical and projected climate data to
+model the climatic water balance of the Burroughs Creek site using the
+highest resolution topographic and soil survey data available to
+understand fine-scale spatial variation in the climatic water balance
+across the site in order to facilitate identification of suitable
+planting microsites and guide planting of whitebark pine seedlings.
+As whitebark pine is a long-lived tree species that reaches
+reproductive age around 50 years in ideal conditions, successful
+whitebark plantings require a consideration of both present and future
+climatic conditions.
 
-Depending on management objects, these results can be interpreted in
-different ways.  For example, if management goals are to:
+In general, desirable planting locations will have higher AET, to
+promote rapid plant establishment and growth, and lower CWD, to
+minimize drought stress and fire
+risk[@thomaWaterBalanceIndicator2020].  Depending on management
+objects, optimal site characteristics can vary and these results can
+be interpreted in different ways.  For example, if management goals
+are to:
 
 1. Maximize successful establishment of seedlings - planters should
        choose planting locations that maximize AET to achieve higher
@@ -138,6 +153,8 @@ different ways.  For example, if management goals are to:
        cause mortality in trees that are not adapted to those extremes
        (M. Tercek, personal communication, June 4, 2024).
 
+Figures displayed in this document can be clicked to enlarged.
+
 ## Planting Units
 
 ```{r planting-units, fig.cap = "Burroughs Creek Planting Units, with hillshade and USFS roads.", fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
@@ -154,7 +171,7 @@ ggplot() +
     annotation_scale(aes(location = "br"))
 ```
 
-``` {r planting-unit-statistics}
+``` {r planting-unit-statistics,  warning = FALSE, message = FALSE, echo = FALSE}
 knitr::kable(
     select(as_tibble(units),
         Unit,
@@ -173,7 +190,7 @@ knitr::kable(
 ```
 
 ##  Soils
-``` {r soils, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
+``` {r soils, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE, fig.cap = "Burroughs Creek soil water holding capacity (WHC, mm).  WHC is taken from the SSURGO available water storage at 25 cm soil depth layer"}
 ggplot() +
     geom_spatraster(data = soil) +
     labs(title = "Burroughs WBP Planting Unit Soil WHC (mm) to 25cm soil depth") +
@@ -184,12 +201,19 @@ ggplot() +
     annotation_scale(aes(location = "br"))
 ```
 
-Soils range from `r global(soil, min, na.rm = TRUE)[[1]]` to `r global(soil, max, na.rm = TRUE)[[1]]` mm whc at 25 cm soil depth. Soil water capacity at 25 cm was selected because the application of this report is for planting seedlings and mature whitebark pine trees typically have shallow root systems not typically penetrating more than 30cm of soil (https://www.fs.usda.gov/database/feis/plants/tree/pinalb/all.html).
+Soils range from `r global(soil, min, na.rm = TRUE)[[1]]` to `r global(soil, max, na.rm = TRUE)[[1]]` mm whc at 25 cm soil depth
+(Figure \@ref(fig:soils)). Soil water capacity at 25 cm was selected
+because the application of this report is for planting seedlings and
+mature whitebark pine trees typically have shallow root systems not
+typically penetrating more than 30cm of soil
+(https://www.fs.usda.gov/database/feis/plants/tree/pinalb/all.html).
+Soils in the WB2 unit hold approximately 8 mm more water on average
+(Table \@ref(tab:soils-zonals)).
 
 ``` {r soils-zonals, echo = FALSE}
 zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
     cbind(Unit = units$Unit, .) %>%
-    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)")) %>%
+    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)"), caption = "Average soil WHC (mm)") %>%
     kable_styling(full_width = F)
 ```
 
@@ -223,28 +247,27 @@ and projected climate grids were reprojected and resampled to the same
 CRS, extent, and resolution as the 1 m DEM raster.
 
 Temperature and Precipitation projections for the following GCMs from
-the MACA data set were included in this analysis:
-| GMC            |
-|----------------|
-| bcc-csm1-1-m   |
-| bcc-csm1-1     |
-| BNU-ESM        |
-| CanESM2        |
-| CNRM-CM5       |
-| CSIRO-Mk3-6-0  |
-| GFDL-ESM2G     |
-| GFDL-ESM2M     |
-| HadGEM2-CC365  |
-| HadGEM2-ES365  |
-| inmcm4         |
-| IPSL-CM5A-LR   |
-| IPSL-CM5A-MR   |
-| IPSL-CM5B-LR   |
-| MIROC5         |
-| MIROC-ESM-CHEM |
-| MIROC-ESM      |
-| MRI-CGCM3      |
-| NorESM1-M      |
+the MACA data set were included in this analysis (n = 19):
+
+`r models <- c("bcc-csm1-1-m",
+  "bcc-csm1-1",
+  "BNU-ESM",
+  "CanESM2",
+  "CNRM-CM5",
+  "CSIRO-Mk3-6-0",
+  "GFDL-ESM2G",
+  "GFDL-ESM2M",
+  "HadGEM2-CC365",
+  "HadGEM2-ES365",
+  "inmcm4",
+  "IPSL-CM5A-LR",
+  "IPSL-CM5A-MR",
+  "IPSL-CM5B-LR",
+  "MIROC5",
+  "MIROC-ESM-CHEM",
+  "MIROC-ESM",
+  "MRI-CGCM3",
+"NorESM1-M"); knitr::kable(models, col.names = c("GCM"))`
 
 The daily water balance at a 1m resolution was modeled using a
 modified version of the script used to generate the NPS 1 km Gridded
@@ -261,7 +284,7 @@ and Deficit were created.
 
 # Results
 
-## T50
+<!-- ## T50 -->
 
 <!-- ``` {r include = FALSE} -->
 <!-- t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]] -->
@@ -296,7 +319,7 @@ and Deficit were created.
 <!-- 4. Annual sums of AET/Deficit -->
 <!-- annual_sum.sh using CDO -->
 
-## Historical
+## Historical Water Balance
 
 ``` {r historical, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 gridmet_data_dir <- file.path("~/out/sums/")
@@ -338,14 +361,14 @@ for (year in years) {
 
 unit_stats <- bind_cols(unit = rep(units$Unit, nrow(unit_stats) / 2), unit_stats)
 
-unit_stats %>% pivot_wider(id_cols = c(unit, year, var),
-                            names_from = type,
-                           values_from = value) %>%
-    ggplot(aes(x = year, y = mean, color = unit)) +
-    geom_line() +
-    geom_ribbon(aes(ymin = min, ymax = max, fill = unit), linetype = "dashed", alpha = 0.1) +
-    ##geom_linerange(aes(x = year, y = mean, ymin = min, ymax = max), color = unit) +
-    facet_wrap(~var)
+## unit_stats %>% pivot_wider(id_cols = c(unit, year, var),
+##                             names_from = type,
+##                            values_from = value) %>%
+##     ggplot(aes(x = year, y = mean, color = unit)) +
+##     geom_line() +
+##     geom_ribbon(aes(ymin = min, ymax = max, fill = unit), linetype = "dashed", alpha = 0.1) +
+##     ##geom_linerange(aes(x = year, y = mean, ymin = min, ymax = max), color = unit) +
+##     facet_wrap(~var)
 
 ## unit_stats %>% pivot_longer(cols = starts_with(c("aet"))) %>%
 ##     ggplot() +
@@ -358,10 +381,10 @@ unit_stats %>% pivot_wider(id_cols = c(unit, year, var),
 ##     labs(title = "Change in CWD normals vs 1988 drought year")
 
 aet_scale <-
-    scale_fill_viridis_c(option = "D", limits = c(50, 300))
+    scale_fill_viridis_c(option = "D", limits = c(50, 350))
 
 cwd_scale <-
-  scale_fill_viridis_c(option = "B", limits = c(0, 350))
+  scale_fill_viridis_c(option = "B", limits = c(0, 400))
 
 aet_sd_scale <-
     scale_fill_viridis_c(option = "A", limits = c(0, 15))
@@ -435,17 +458,21 @@ cwd_1988_plot <- ggplot() +
 ```
 
 
-``` {r historical2, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
-
+``` {r historical-aet-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Historical AET (mm)"}
 ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
-ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
-ggarrange(aet_1988_plot, cwd_1988_plot)
-
 ```
 
-## Projections
+``` {r historical-cwd-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Historical CWD (mm)"} 
+ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
+```
 
-``` {r projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
+``` {r drought-year-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Drought Year Conditions (1988)"}
+ggarrange(aet_1988_plot, cwd_1988_plot)
+```
+
+## Projected Water Balance
+
+``` {r projections-setup, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 current <- 2006:2024
 near <- 2025:2049
 mid <- 2050:2074
@@ -454,28 +481,28 @@ end <- 2075:2099
 ens_dir <- file.path("/media/smithers/shuysman/data/burroughs/sums/ensembles/")
 
 cwd_ens45 <- rast(file.path(ens_dir, "ensemble_rcp45_Deficit_annual_sum_burroughs.nc")) %>%
-    clamp(lower = 0, values = NA) / 10
+  clamp(lower = 0, values = NA) / 10
 
 cwd_ens45_near <- cwd_ens45 %>% subset(year(time(.)) %in% near) %>% mean()
 cwd_ens45_mid <- cwd_ens45 %>% subset(year(time(.)) %in% mid) %>% mean()
 cwd_ens45_end <- cwd_ens45 %>% subset(year(time(.)) %in% end) %>% mean()
 
 cwd_ens85 <- rast(file.path(ens_dir, "ensemble_rcp85_Deficit_annual_sum_burroughs.nc")) %>%
-    clamp(lower = 0, values = NA) / 10
+  clamp(lower = 0, values = NA) / 10
 
 cwd_ens85_near <- cwd_ens85 %>% subset(year(time(.)) %in% near) %>% mean()
 cwd_ens85_mid <- cwd_ens85 %>% subset(year(time(.)) %in% mid) %>% mean()
 cwd_ens85_end <- cwd_ens85 %>% subset(year(time(.)) %in% end) %>% mean()
 
 aet_ens45 <- rast(file.path(ens_dir, "ensemble_rcp45_AET_annual_sum_burroughs.nc")) %>%
-    clamp(lower = 0, values = NA) / 10
+  clamp(lower = 0, values = NA) / 10
 
 aet_ens45_near <- aet_ens45 %>% subset(year(time(.)) %in% near) %>% mean()
 aet_ens45_mid <- aet_ens45 %>% subset(year(time(.)) %in% mid) %>% mean()
 aet_ens45_end <- aet_ens45 %>% subset(year(time(.)) %in% end) %>% mean()
 
 aet_ens85 <- rast(file.path(ens_dir, "ensemble_rcp85_AET_annual_sum_burroughs.nc")) %>%
-    clamp(lower = 0, values = NA) / 10
+  clamp(lower = 0, values = NA) / 10
 
 aet_ens85_near <- aet_ens85 %>% subset(year(time(.)) %in% near) %>% mean()
 aet_ens85_mid <- aet_ens85 %>% subset(year(time(.)) %in% mid) %>% mean()
@@ -483,115 +510,178 @@ aet_ens85_end <- aet_ens85 %>% subset(year(time(.)) %in% end) %>% mean()
 
 
 aet_ens45_end_sd <- aet_ens45 %>%
-    subset(year(time(.)) %in% end) %>%
-    stdev()
+  subset(year(time(.)) %in% end) %>%
+  stdev()
 aet_ens85_end_sd <- aet_ens85 %>%
-    subset(year(time(.)) %in% end) %>%
-    stdev()
+  subset(year(time(.)) %in% end) %>%
+  stdev()
 
 cwd_ens45_end_sd <- cwd_ens45 %>%
-    subset(year(time(.)) %in% end) %>%
-    stdev()
+  subset(year(time(.)) %in% end) %>%
+  stdev()
 cwd_ens85_end_sd <- cwd_ens85 %>%
-    subset(year(time(.)) %in% end) %>%
-    stdev()
+  subset(year(time(.)) %in% end) %>%
+  stdev()
+```
 
-### CWD Historical Plots --------------------
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_ens45_near, lower = 100, values = NA), alpha = 1) +
-    cwd_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD, Near-future (2025-2049)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_ens45_mid, lower = 100, values = NA), alpha = 1) +
-    cwd_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD, Mid-century (2050-2074)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-    ##    geom_spatraster(data = shade, show.legend = FALSE) +
-    ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(cwd_ens45_end, lower = 100, values = NA), alpha = 1) +
-    cwd_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD, End-century (2075-2099)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-  geom_spatraster(data = cwd_ens45_end_sd) +
-  cwd_sd_scale +
-  labs(title = "RCP4.5 Interannual Variability in ensemble mean annual CWD, End-Century (2075-2099)")
-
-ggplot() +
-  geom_spatraster(data = cwd_ens85_end_sd) +
-  cwd_sd_scale +
-  labs(title = "RCP8.5 Interannual Variability in ensemble mean annual CWD, End-Century (2075-2099)")
-
-### AET Historical Plots --------------------
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_ens45_near, lower = 100, values = NA), alpha = 1) +
-    aet_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean AET, Near-future (2025-2049)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_ens45_mid, lower = 100, values = NA), alpha = 1) +
-    aet_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean AET, Mid-century (2050-2074)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-ggplot() +
-    ##    geom_spatraster(data = shade, show.legend = FALSE) +
-    ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = clamp(aet_ens45_end, lower = 100, values = NA), alpha = 1) +
-    aet_scale +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean AET, End-century (2075-2099)") +
-    annotation_north_arrow(aes(location = "tr")) +
+```{r cwd-projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 12, out.width = '100%', fig.cap = "Ensemble mean annual CWD (mm), RCP4.5 and RCP8.5 scenarios."}
+cwd_ens45_near_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens45_near, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 Near-future (2025-2049)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
   annotation_scale(aes(location = "br"))
 
-ggplot() +
+cwd_ens45_mid_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens45_mid, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 Mid-century (2050-2074)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+cwd_ens45_end_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens45_end, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 End-century (2075-2099)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+cwd_ens85_near_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens85_near, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 Near-future (2025-2049)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+cwd_ens85_mid_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens85_mid, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 Mid-century (2050-2074)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+cwd_ens85_end_plot <- ggplot() +
+  geom_spatraster(data = clamp(cwd_ens85_end, lower = 100, values = NA), alpha = 1) +
+  cwd_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 End-century (2075-2099)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+ggarrange(
+  cwd_ens45_near_plot, cwd_ens85_near_plot,
+  cwd_ens45_mid_plot,  cwd_ens85_mid_plot,
+  cwd_ens45_end_plot,  cwd_ens85_end_plot,
+  ncol = 2,
+  nrow = 3,
+  common.legend = TRUE
+)
+
+```
+
+
+```{r cwd-sd-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 16, fig.cap = "Interannual Variability (SD) in ensemble mean annual CWD, End-Century (2075-2099)"}
+cwd_ens45_sd_plot <- ggplot() +
+  geom_spatraster(data = cwd_ens45_end_sd) +
+  cwd_sd_scale +
+  labs(title = "RCP4.5")
+
+cwd_ens85_sd_plot <- ggplot() +
+  geom_spatraster(data = cwd_ens85_end_sd) +
+  cwd_sd_scale +
+  labs(title = "RCP8.5")
+
+ggarrange(cwd_ens45_sd_plot, cwd_ens85_sd_plot, common.legend = TRUE)
+```
+
+```{r aet-projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 12, out.width = '100%',  fig.cap = "Ensemble mean annual AET (mm), RCP4.5 and RCP8.5 scenarios."}
+aet_ens45_near_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens45_near, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 Near-future (2025-2049)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+aet_ens45_mid_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens45_mid, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 Mid-century (2050-2074)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+aet_ens45_end_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens45_end, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP4.5 End-century (2075-2099)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+aet_ens85_near_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens85_near, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 Near-future (2025-2049)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+aet_ens85_mid_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens85_mid, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 Mid-century (2050-2074)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+aet_ens85_end_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_ens85_end, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "RCP8.5 End-century (2075-2099)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+ggarrange(
+  aet_ens45_near_plot, aet_ens85_near_plot,
+  aet_ens45_mid_plot,  aet_ens85_mid_plot,
+  aet_ens45_end_plot,  aet_ens85_end_plot,
+  ncol = 2,
+  nrow = 3,
+  common.legend = TRUE
+)
+```
+
+``` {r aet-sd-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 16, fig.cap = "Interannual Variability (SD) in ensemble mean annual AET, End-Century (2075-2099)"}
+aet_ens45_sd_plot <- ggplot() +
   geom_spatraster(data = aet_ens45_end_sd) +
   aet_sd_scale +
   labs(title = "RCP4.5 Interannual Variability in ensemble mean annual AET, End-Century (2075-2099)")
 
-ggplot() +
+aet_ens85_sd_plot <- ggplot() +
   geom_spatraster(data = aet_ens85_end_sd) +
   aet_sd_scale +
   labs(title = "RCP8.5 Interannual Variability in ensemble mean annual AET, End-Century (2075-2099)")
 
+ggarrange(aet_ens45_sd_plot, aet_ens85_sd_plot, common.legend = TRUE)
 ```
 
 ## Change from Baseline
