@@ -6,9 +6,11 @@ date: "`r Sys.Date()`"
 fontsize: 10pt 
 bibliography: library.bib
 csl: global-ecology-and-biogeography.csl
+link-citations: true
 output:
   rmdformats::robobook:
     lightbox: true
+    use_bookdown: true
 ---
 
 ```{css, echo=FALSE}
@@ -31,7 +33,7 @@ library(ggspatial)
 library(ggpubr)
 library(kableExtra)
 
-terraOptions(verbose = TRUE,
+terraOptions(verbose = FALSE,
              memfrac = 0.9)
 
 elev <- rast("./data/burroughs_creek_USGS1m_clipped_nad83.tif") 
@@ -44,8 +46,7 @@ pal_greys <- hcl.colors(1000, "Grays")
 
 units <- st_read("./data/units/Possible_WBP_Units_Nancy_Updated.shp") %>% st_cast("MULTIPOLYGON")
 
-
-### Generate fs roads gpkg with only burroughs roads
+##  Generate fs roads gpkg with only burroughs roads
 ## fs_roads <- st_read("./data/fs_roads/S_USA.RoadCore_FS.shp")
 
 ## elev2 <- project(elev, crs(fs_roads))
@@ -68,28 +69,78 @@ stats <- data.frame(elev_mean = zonal(elev, vect(units), fun = "mean")[[1]],
 units <- bind_cols(units, stats)
 ```
 
+``` {r plot-settings, include = FALSE}
+## Change from baseline plots
+aet_change_scale <-
+    scale_fill_viridis_c(option = "G", limits = c(0, 200))
+
+cwd_change_scale <-
+    scale_fill_viridis_c(option = "F", limits = c(0, 200))
+```
+
 # Introduction
+This report presents historical (1979-2022) and projected (2006-2099)
+water balance for the Burroughs Creek site \@ref(fig:planting-units) in Shoshone National
+Forest.  This location was selected to plant whitebark pine (*Pinus
+albicaulis*) seedlings in summer 2024.  The site previously burned in
+August 30, 2013 in the Burroughs wildfire (MTBS ID
+`wy4368810966320130830`).  The vegetation composition of the site
+prior to the burn is unknown, but is assumed to have sustained
+populations of whitebark pine.  Current satellite imagery shows that
+the Burroughs wildfire cleared most trees from the site, with some
+remnant trees persisting in sheltered locations.
 
-`r crs(elev, proj = TRUE)`
+This report applies the climatic water balance to the Burroughs Creek
+site at a fine spatial scale to make recommendations of ideal planting
+locations. Potential Evapotranspiration (PET) represents the potential
+for plant growth given available energy if not limited by water
+availability.  Actual Evapotranspiration (AET) is a measure of total
+evaporative loss to the atmosphere, and is well-correlated with
+measures of plant growth such as primary productivity.  The difference
+between PET and AET is the Climatic Water Deficit (CWD), which
+measures evaporative demand unmet by available water.  AET represents
+the length and magnitude of growing conditions favorable to plants
+while CWD provides a measure of drought stress.  The bivariate
+relationship between AET and CWD is a robust tool to characterize the
+biophysical environment of plants and has been shown to be
+well-correlated with vegetation distributions across ten orders of
+spatial magnitude
+[@stephensonClimaticControlVegetation1990;@stephensonActualEvapotranspirationDeficit1998].
 
-`r st_bbox(elev)`
+Fine-scale variation in topography and soil features has been shown to
+strongly affect modeled water balance [@dyerGISBasedWaterBalance2019].
+Our objective was to use historical and projected climate data to model the
+climatic water balance of the Burroughs Creek site using the highest
+resolution topographic and soil survey data available to understand
+fine-scale spatial variation in the climatic water balance across the site in
+order to guide planting of whitebark pine seedlings.
+
+Depending on management objects, these results can be interpreted in
+different ways.  For example, if management goals are to:
+
+1. Maximize successful establishment of seedlings - planters should
+       choose planting locations that maximize AET to achieve higher
+       seedling growth rates and minimize CWD to reduce drought
+       stress.  Previous work has identified fastest growth rates in
+       whitebark seedlings above an annual AET around 350 mm
+       [@laufenbergBiophysicalGradientsPerformance2020].  Although
+       direct comparisons with this work cannot be made without bias
+       correction between the different climate data sets used, in
+       general higher AET can be assumed to correlate with faster
+       seedling growth and establishment.
+2. Grow trees to cone-bearing age as quickly as possible - choose
+       planting locations that maximize AET over the duration needed
+       for trees to reach reproductive age, approximately 25-50 years.
+3. Maximize longevity of adult trees - select planting locations that
+       minimize interannual variability in stressors.  It is thought
+       that trees can survive unfavorable conditions if they are
+       adapted to them, and extreme swings in climatic conditions
+       cause mortality in trees that are not adapted to those extremes
+       (M. Tercek, personal communication, June 4, 2024).
 
 ## Planting Units
 
-```{r planting-units, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
-knitr::kable(select(as_tibble(units),
-                    Unit,
-                    Description = DESCRIPTIO,
-                    Acres = ACRES,
-                    elev_mean,
-                    elev_max,
-                    elev_min,
-                    slope_mean,
-                    slope_max,
-                    slope_min,
-                    aspect_mean),
-             digits = 2)
-
+```{r planting-units, fig.cap = "Burroughs Creek Planting Units, with hillshade and USFS roads.", fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
 ggplot() +
     geom_spatraster(data = shade, show.legend = FALSE) +
 ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
@@ -103,43 +154,24 @@ ggplot() +
     annotation_scale(aes(location = "br"))
 ```
 
-### Elevation Bias
-This is the difference between the elevation used for the gridMET cell that was used for climate data (2813.28m) and the elevatio of each cell in the 1m LiDAR DEM.  Temperate varies along elevational and failure to account for lapse rates can result in error in calculated water balance metrics (Tercek et al. 2021).  Actual daily max and min temperatures could be higher or lower depending on how much higher or lower the point is compared to the elevation used to model the gridMET cell.
-``` {r elev-bias, echo = FALSE, message = FALSE}
-
-metdata_elev <- rast("./data/metdata_elevationdata.nc") %>%
-    project(elev, method = "near")
-
-## bias <- elev - metdata_elev
-
-## ggplot() +
-##     geom_spatraster(data = bias) +
-##     scale_fill_viridis_c(option = "A") +
-##     labs(title = "Burroughs WBP Planting Units Elevation Bias") +
-##     annotation_north_arrow(aes(location = "tr")) +
-##     annotation_scale(aes(location = "br"))
-
-elev_used <- 2813.28
-
-bias_used <- elev - elev_used
-
-ggplot() +
-    geom_spatraster(data = bias_used) +
-    scale_fill_viridis_c(option = "A") +
-    labs(title = "Burroughs WBP Planting Units Elevation Bias") +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-
-## Average bias per unit
-zonal(elev, vect(units), fun = "mean") - elev_used
-
-## Largest observed biases
-zonal(elev, vect(units), fun = "max") - elev_used
-zonal(elev, vect(units), fun = "min") - elev_used
+``` {r planting-unit-statistics}
+knitr::kable(
+    select(as_tibble(units),
+        Unit,
+        Description = DESCRIPTIO,
+        Acres = ACRES,
+        elev_mean,
+        elev_max,
+        elev_min,
+        slope_mean,
+        slope_max,
+        slope_min,
+        aspect_mean
+    ),
+    digits = 2,
+    caption = "Topographic Statistics of Burroughs Creek planting units")
 ```
+
 ##  Soils
 ``` {r soils, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
 ggplot() +
@@ -161,63 +193,112 @@ zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
     kable_styling(full_width = F)
 ```
 
-
-## T50
-
-``` {r include = FALSE}
-t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]]
-```
-
-Jennings *T*~50~ coeffcient used for all cells = `r t50`
-
 # Methods
-## Analysis
-1. Prepare layers
-Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference
-- DEM
-1m LiDAR opentopography.org
-- resample_layers.R
-	dayl
-	t50
-- slope (GDAL in QGIS)
-- aspect (GDAL in QGIS)
-- split_ncs.R/split_ncs.sbatch
-  Split climate inputs (tmax, tmin, Precip) into tifs, 1 tif per day
-  Results in millions of layers for each combo of day/year/gcm/scenario/variable
-- Soil
-SSURGO data from Curve Number Generator in QGIS
-25 cm depth AWC
+A Thornthwaite-style water balance model
+[@thornthwaiteApproachRationalClassification1948] was run at a
+daily-time step for the area within the bounding box of the planting
+units. Topographic and elevation data was provided by the 1-meter
+LiDAR digital elevation model (DEM) provided by the USGS
+3DEP [@u.s.geologicalsurveyWYFEMAEast2020].  Slope and aspect were
+calculated from the 3DEP DEM using tools provided in QGIS
+[@QGIS_software].  
 
-2. Run WB
-start_wb_v_1_5.py
+Soil water holding capacity (WHC) was estimated using the 'available
+water storage from 0-25cm' (`aws025wta`) data provided by the SSURGO
+database
+[@naturalresourcesconservationserviceSoilSurveyGeographic2015].  A 1
+m raster was generated from the WHC data in QGIS using the 1 m DEM
+raster as a reference for sampling grid cells.  
 
-3. Collate
-collate.R
+Historical climate data (maximum temperature, minimum temperature,
+precipitation) from 1979-2022 was provided by the gridMET
+dataset at a daily timestep and 4 km resolution
+[@abatzoglouDevelopmentGriddedSurface2013].  Projected climate data
+for the same variables was provided by the MACA data set at the same
+timestep and spatial resolution
+[@abatzoglouComparisonStatisticalDownscaling2012].  The MACA dataset
+was downscaled using gridMET, so time series between 1979 and 2099 are
+commensurate with no breaks between past and future. The historical
+and projected climate grids were reprojected and resampled to the same
+CRS, extent, and resolution as the 1 m DEM raster.
 
-4. Annual sums of AET/Deficit
-annual_sum.sh using CDO
+Temperature and Precipitation projections for the following GCMs from
+the MACA data set were included in this analysis:
+| GMC            |
+|----------------|
+| bcc-csm1-1-m   |
+| bcc-csm1-1     |
+| BNU-ESM        |
+| CanESM2        |
+| CNRM-CM5       |
+| CSIRO-Mk3-6-0  |
+| GFDL-ESM2G     |
+| GFDL-ESM2M     |
+| HadGEM2-CC365  |
+| HadGEM2-ES365  |
+| inmcm4         |
+| IPSL-CM5A-LR   |
+| IPSL-CM5A-MR   |
+| IPSL-CM5B-LR   |
+| MIROC5         |
+| MIROC-ESM-CHEM |
+| MIROC-ESM      |
+| MRI-CGCM3      |
+| NorESM1-M      |
 
+The daily water balance at a 1m resolution was modeled using a
+modified version of the script used to generate the NPS 1 km Gridded
+Water Balance product for the coterminous United States
+[@tercekHistoricalChangesPlant2021].  Annual sums of AET (mm) and
+Deficit (mm)
+were calculated for the historical dataset as well as for each
+GCM/Scenario combination.  Ensemble averages for annual sums of AET
+and Deficit were created.
 
-## Grids
-### 4km (gridMET/MACA scale)
-- t
-- p
-- accumswe
-### 1m (DEM scale)
-- Elevation (1m lidar)
-- Slope (1m lidar derived)
-- Aspect (1m lidar derived)
+<!-- `r crs(elev, proj = TRUE)` -->
 
-### Other/TBD
-- soil (1:24000 ssurgo)
-- dayl (1 km daymet, I think)
-- t50 (4km? see jennings file)
+<!-- `r st_bbox(elev)` -->
 
 # Results
 
+## T50
+
+<!-- ``` {r include = FALSE} -->
+<!-- t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]] -->
+<!-- ``` -->
+
+<!-- Jennings *T*~50~ coeffcient used for all cells = `r t50` -->
+
+<!-- # Methods -->
+<!-- ## Analysis -->
+<!-- 1. Prepare layers -->
+<!-- Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference -->
+<!-- - DEM -->
+<!-- 1m LiDAR opentopography.org -->
+<!-- - resample_layers.R -->
+<!-- 	dayl -->
+<!-- 	t50 -->
+<!-- - slope (GDAL in QGIS) -->
+<!-- - aspect (GDAL in QGIS) -->
+<!-- - split_ncs.R/split_ncs.sbatch -->
+<!--   Split climate inputs (tmax, tmin, Precip) into tifs, 1 tif per day -->
+<!--   Results in millions of layers for each combo of day/year/gcm/scenario/variable -->
+<!-- - Soil -->
+<!-- SSURGO data from Curve Number Generator in QGIS -->
+<!-- 25 cm depth AWC -->
+
+<!-- 2. Run WB -->
+<!-- start_wb_v_1_5.py -->
+
+<!-- 3. Collate -->
+<!-- collate.R -->
+
+<!-- 4. Annual sums of AET/Deficit -->
+<!-- annual_sum.sh using CDO -->
+
 ## Historical
 
-``` {r historical, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
+``` {r historical, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 gridmet_data_dir <- file.path("~/out/sums/")
 
 aet <- rast(file.path(gridmet_data_dir, "historical_gridmet_AET_annual_sum_burroughs.nc")) |>
@@ -266,27 +347,27 @@ unit_stats %>% pivot_wider(id_cols = c(unit, year, var),
     ##geom_linerange(aes(x = year, y = mean, ymin = min, ymax = max), color = unit) +
     facet_wrap(~var)
 
+## unit_stats %>% pivot_longer(cols = starts_with(c("aet"))) %>%
+##     ggplot() +
+##     geom_line(aes(x = name, y = value, group = Unit, color = Unit)) +
+##     labs(title = "Change in AET normals vs 1988 drought year")
 
-knitr::kable(select(unit_stats,
-                    Unit, DESCRIPTIO, aet_1988:cwd_2022),
-             digits = 2)
-
-
-unit_stats %>% pivot_longer(cols = starts_with(c("aet"))) %>%
-    ggplot() +
-    geom_line(aes(x = name, y = value, group = Unit, color = Unit)) +
-    labs(title = "Change in AET normals vs 1988 drought year")
-
-unit_stats %>% pivot_longer(cols = starts_with(c("cwd"))) %>%
-    ggplot() +
-    geom_line(aes(x = name, y = value, group = Unit, color = Unit)) +
-    labs(title = "Change in CWD normals vs 1988 drought year")
+## unit_stats %>% pivot_longer(cols = starts_with(c("cwd"))) %>%
+##     ggplot() +
+##     geom_line(aes(x = name, y = value, group = Unit, color = Unit)) +
+##     labs(title = "Change in CWD normals vs 1988 drought year")
 
 aet_scale <-
     scale_fill_viridis_c(option = "D", limits = c(50, 300))
 
 cwd_scale <-
-    scale_fill_viridis_c(option = "B", limits = c(0, 350))
+  scale_fill_viridis_c(option = "B", limits = c(0, 350))
+
+aet_sd_scale <-
+    scale_fill_viridis_c(option = "A", limits = c(0, 15))
+
+cwd_sd_scale <-
+    scale_fill_viridis_c(option = "C", limits = c(0, 30))
 
 aet_2002_plot <- ggplot() +
     geom_spatraster(data = aet_2002, alpha = 1) +
@@ -351,18 +432,20 @@ cwd_1988_plot <- ggplot() +
     labs(title = "1988 CWD (Drought Year)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
-
-
-ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
-ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
-
-ggarrange(aet_1988_plot, cwd_1988_plot)
-
-
 ```
 
 
-``` {r eval = F, include = F}
+``` {r historical2, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
+
+ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
+ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
+ggarrange(aet_1988_plot, cwd_1988_plot)
+
+```
+
+## Projections
+
+``` {r projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 current <- 2006:2024
 near <- 2025:2049
 mid <- 2050:2074
@@ -399,12 +482,28 @@ aet_ens85_mid <- aet_ens85 %>% subset(year(time(.)) %in% mid) %>% mean()
 aet_ens85_end <- aet_ens85 %>% subset(year(time(.)) %in% end) %>% mean()
 
 
+aet_ens45_end_sd <- aet_ens45 %>%
+    subset(year(time(.)) %in% end) %>%
+    stdev()
+aet_ens85_end_sd <- aet_ens85 %>%
+    subset(year(time(.)) %in% end) %>%
+    stdev()
+
+cwd_ens45_end_sd <- cwd_ens45 %>%
+    subset(year(time(.)) %in% end) %>%
+    stdev()
+cwd_ens85_end_sd <- cwd_ens85 %>%
+    subset(year(time(.)) %in% end) %>%
+    stdev()
+
+### CWD Historical Plots --------------------
+
 ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = clamp(cwd_ens45_near, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
+    cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, Near-future (2025-2049)") +
@@ -416,7 +515,7 @@ ggplot() +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = clamp(cwd_ens45_mid, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
+    cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, Mid-century (2050-2074)") +
@@ -424,125 +523,189 @@ ggplot() +
     annotation_scale(aes(location = "br"))
 
 ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ##    geom_spatraster(data = shade, show.legend = FALSE) +
+    ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = clamp(cwd_ens45_end, lower = 100, values = NA), alpha = 1) +
-    scale_fill_viridis_c(option = "B", direction = 1) +
+    cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP4.5 Ensemble Mean CWD, End-century (2075-2099)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
+ggplot() +
+  geom_spatraster(data = cwd_ens45_end_sd) +
+  cwd_sd_scale +
+  labs(title = "RCP4.5 Interannual Variability in ensemble mean annual CWD, End-Century (2075-2099)")
 
-cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_mean
+ggplot() +
+  geom_spatraster(data = cwd_ens85_end_sd) +
+  cwd_sd_scale +
+  labs(title = "RCP8.5 Interannual Variability in ensemble mean annual CWD, End-Century (2075-2099)")
+
+### AET Historical Plots --------------------
 
 ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
-    geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
+    geom_spatraster(data = clamp(aet_ens45_near, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD, End-century (2075-2099)") +
+    labs(title = "RCP4.5 Ensemble Mean AET, Near-future (2025-2049)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
-
-cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_mean
 
 ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
-    geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
+    geom_spatraster(data = clamp(aet_ens45_mid, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
+    labs(title = "RCP4.5 Ensemble Mean AET, Mid-century (2050-2074)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_mean
+ggplot() +
+    ##    geom_spatraster(data = shade, show.legend = FALSE) +
+    ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = clamp(aet_ens45_end, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "RCP4.5 Ensemble Mean AET, End-century (2075-2099)") +
+    annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
 
 ggplot() +
+  geom_spatraster(data = aet_ens45_end_sd) +
+  aet_sd_scale +
+  labs(title = "RCP4.5 Interannual Variability in ensemble mean annual AET, End-Century (2075-2099)")
+
+ggplot() +
+  geom_spatraster(data = aet_ens85_end_sd) +
+  aet_sd_scale +
+  labs(title = "RCP8.5 Interannual Variability in ensemble mean annual AET, End-Century (2075-2099)")
+
+```
+
+## Change from Baseline
+
+``` {r baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
+## CWD change from baseline
+
+cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_2022
+(global(mean(cwd_rcp45_change_from_baseline)))
+
+cwd_45_change_plot <- ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
+    cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
+    labs(title = "RCP4.5 Ensemble Mean CWD end-of-century (2075-2099) change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_mean
+cwd_rcp85_change_from_baseline <- cwd_ens85_end - cwd_2022
+(global(mean(cwd_rcp85_change_from_baseline)))
 
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-
-cwd_rcp85_change_from_baseline <- cwd_ens85_end - cwd_mean
-
-ggplot() +
+cwd_85_change_plot <- ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = cwd_rcp85_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
+    cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP8.5 Ensemble Mean CWD end-of-century change from baseline (2002-2022)") +
+    labs(title = "RCP8.5 Ensemble Mean CWD end-of-century (2075-2099) change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-aet_rcp45_change_from_baseline <- aet_ens45_end - aet_mean
+ggarrange(cwd_45_change_plot, cwd_85_change_plot, common.legend = TRUE)
 
-ggplot() +
+## AET change from baseline
+
+aet_rcp45_change_from_baseline <- aet_ens45_end - aet_2022
+(global(mean(aet_rcp45_change_from_baseline)))
+
+aet_45_change_plot <- ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
 ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "G") +
+    aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean AET end-of-century change from baseline (2002-2022)") +
+    labs(title = "RCP4.5 Ensemble Mean AET end-of-century (2075-2099) change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 
-aet_rcp85_change_from_baseline <- aet_ens85_end - aet_mean
+aet_rcp85_change_from_baseline <- aet_ens85_end - aet_2022
+(global(mean(aet_rcp85_change_from_baseline)))
 
-ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+aet_85_change_plot <- ggplot() +
+    ##    geom_spatraster(data = shade, show.legend = FALSE) +
+    ##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = aet_rcp85_change_from_baseline, alpha = 1) +
-    scale_fill_viridis_c(option = "E") +
+    aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
     labs(title = "RCP8.5 Ensemble Mean AET end-of-century change from baseline (2002-2022)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
+ggarrange(aet_45_change_plot, aet_85_change_plot, common.legend = TRUE)
+
+
+## years = c(near, mid, end)
+## vars = c("aet", "cwd")
+## types = c("mean", "min", "max")
+## secnarios <- c("rcp45", "rcp85")
+
+## unit_stats <- tibble()
+## for (year in years) {
+##     for (var in vars) {
+##         for (type in types) {
+##             unit_stats <- bind_rows(unit_stats,
+##                                bind_cols(year = year,
+##                                          var = var,
+##                                          type = type,
+##                                          value = zonal(get(glue::glue("{var}_{year}")), vect(units), fun = type, na.rm = TRUE)[[1]]))
+##         }
+##     }
+## }
+
+## unit_stats <- bind_cols(unit = rep(units$Unit, nrow(unit_stats) / 2), unit_stats)
+
+## unit_stats %>%
+##     pivot_wider(
+##         id_cols = c(unit, year, var),
+##         names_from = type,
+##         values_from = value
+##     ) %>%
+##     ggplot(aes(x = year, y = mean, color = unit)) +
+##     geom_line() +
+##     geom_ribbon(aes(ymin = min, ymax = max, fill = unit), linetype = "dashed", alpha = 0.1) +
+##     ## geom_linerange(aes(x = year, y = mean, ymin = min, ymax = max), color = unit) +
+##     facet_wrap(~var)
 
 ```
 
 
 # Discussion
 ## Best Planting Sites
-``` {r best-plantings}
+### Historical
+``` {r best-plantings, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 n_sites <- 1000000
 
 (n_sites / ncell(elev)) * 100
@@ -575,14 +738,100 @@ ggplot() +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-bind_cols(units, 
-          sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]) %>%
+bind_cols(units,
+    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
+) %>%
     as_tibble() %>%
     select(Unit, sum_area_best_sites) %>%
     knitr::kable(digits = 2)
+
 ```
 Optimal planting locations will have high AET and low CWD, to maximize potential growth and minimize drought stress.  This algorithm selects for the n = `r n_sites` pixels with the highest AET and n with lowest CWD.  The logical union of these layers is taken to find the best sites, that simultaneously have the highest AET and lowest CWD possible, representing `r round(n_best_sites / ncell(elev), 2)` of the landscape.  
+
+
+### RCP45
+
+``` {r best-45, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
+highest_aet <- selectHighest(aet_ens45_end, n = n_sites)
+lowest_cwd <- selectHighest(cwd_ens45_end, n = n_sites, low = TRUE)
+
+best_sites <- highest_aet & lowest_cwd
+
+(n_best_sites <- zonal(best_sites, best_sites, length)[[2]])
+
+(n_best_sites / ncell(elev)) * 100
+
+(mean_aet <- global(mask(aet_ens45_end, highest_aet), fun = "mean", na.rm = TRUE))
+(mean_cwd <- global(mask(cwd_ens45_end, lowest_cwd), fun = "mean", na.rm = TRUE))
+
+
+ggplot() +
+    geom_spatraster(data = shade, show.legend = FALSE) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = best_sites) +
+    scale_fill_discrete(na.value = "transparent") +
+    geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
+    geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
+    labs(title = glue::glue("Best Planting Sites (Highest AET + Lowest Deficit RCP 45 End of Century) n = {n_best_sites}, {round(n_best_sites * 100 / ncell(elev), 2)}%")) +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+bind_cols(units,
+    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
+) %>%
+    as_tibble() %>%
+    select(Unit, sum_area_best_sites) %>%
+    knitr::kable(digits = 2)
+
+```
+
+### RCP85
+
+``` {r best-85, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
+highest_aet <- selectHighest(aet_ens85_end, n = n_sites)
+lowest_cwd <- selectHighest(cwd_ens85_end, n = n_sites, low = TRUE)
+
+best_sites <- highest_aet & lowest_cwd
+
+(n_best_sites <- zonal(best_sites, best_sites, length)[[2]])
+
+(n_best_sites / ncell(elev)) * 100
+
+(mean_aet <- global(mask(aet_ens85_end, highest_aet), fun = "mean", na.rm = TRUE))
+(mean_cwd <- global(mask(cwd_ens85_end, lowest_cwd), fun = "mean", na.rm = TRUE))
+
+
+ggplot() +
+    geom_spatraster(data = shade, show.legend = FALSE) +
+##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+    ggnewscale::new_scale_fill() +
+    geom_spatraster(data = best_sites) +
+    scale_fill_discrete(na.value = "transparent") +
+    geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
+    geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
+    labs(title = glue::glue("Best Planting Sites (Highest AET + Lowest Deficit RCP 85 End of Century) n = {n_best_sites}, {round(n_best_sites * 100 / ncell(elev), 2)}%")) +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+bind_cols(units,
+    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
+) %>%
+    as_tibble() %>%
+    select(Unit, sum_area_best_sites) %>%
+    knitr::kable(digits = 2)
+
+```
 
 <!-- Local Variables: -->
 <!-- jinx-local-words: "ncell" -->
 <!-- End: -->
+
+
+# References
