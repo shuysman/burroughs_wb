@@ -4,14 +4,12 @@ author:
   - Stephen Huysman, shuysman@gmail.com
 email: "shuysman@gmail.com"
 date: "`r Sys.Date()`"
-fontsize: 11pt 
 bibliography: library.bib
 csl: global-ecology-and-biogeography.csl
 link-citations: true
 output:
-  rmdformats::robobook:
-    lightbox: true
-    use_bookdown: true
+  bookdown::html_document2:
+    number_sections: true
 ---
 
 ```{css, echo=FALSE}
@@ -81,7 +79,7 @@ cwd_change_scale <-
 
 # Introduction
 This report presents historical (1979-2022) and projected (2006-2099)
-water balance for the Burroughs Creek site (Figure \@ref(fig:planting-units)) in Shoshone National
+water balance for the Burroughs Creek site (Figure \@ref(fig:planting-units)) in the Shoshone National
 Forest.  This location was selected to plant whitebark pine (*Pinus
 albicaulis*) seedlings in summer 2024.  The site previously burned in
 August 30, 2013 in the Burroughs wildfire (MTBS ID
@@ -127,11 +125,11 @@ climatic conditions.
 
 In general, desirable planting locations will have higher AET, to
 promote rapid plant establishment and growth, and lower CWD, to
-minimize drought stress and fire
-risk[@thomaWaterBalanceIndicator2020].  Depending on management
-objects, optimal site characteristics can vary and these results can
-be interpreted in different ways.  For example, if management goals
-are to:
+minimize drought stress and fire risk
+[@thomaWaterBalanceIndicator2020].  Depending on management objects,
+optimal site characteristics can vary and these results can be
+interpreted in different ways.  For example, if management goals are
+to:
 
 1. Maximize successful establishment of seedlings - planters should
        choose planting locations that maximize AET to achieve higher
@@ -152,8 +150,6 @@ are to:
        adapted to them, and extreme swings in climatic conditions
        cause mortality in trees that are not adapted to those extremes
        (M. Tercek, personal communication, June 4, 2024).
-
-Figures displayed in this document can be clicked to enlarged.
 
 ## Planting Units
 
@@ -217,26 +213,28 @@ zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
     kable_styling(full_width = F)
 ```
 
+The SSURGO soil automated report for the site can be read here [20240514_11420911928_90_Soil_Report.pdf](./20240514_11420911928_90_Soil_Report.pdf "20240514_11420911928_90_Soil_Report.pdf").
+
 # Methods
 A Thornthwaite-style water balance model
 [@thornthwaiteApproachRationalClassification1948] was run at a
 daily-time step for the area within the bounding box of the planting
 units. Topographic and elevation data was provided by the 1-meter
-LiDAR digital elevation model (DEM) provided by the USGS
-3DEP [@u.s.geologicalsurveyWYFEMAEast2020].  Slope and aspect were
+LiDAR digital elevation model (DEM) provided by the USGS 3DEP
+[@u.s.geologicalsurveyWYFEMAEast2020].  Slope and aspect were
 calculated from the 3DEP DEM using tools provided in QGIS
 [@QGIS_software].  
 
 Soil water holding capacity (WHC) was estimated using the 'available
 water storage from 0-25cm' (`aws025wta`) data provided by the SSURGO
 database
-[@naturalresourcesconservationserviceSoilSurveyGeographic2015].  A 1
-m raster was generated from the WHC data in QGIS using the 1 m DEM
+[@naturalresourcesconservationserviceSoilSurveyGeographic2015].  A 1 m
+raster was generated from the WHC data in QGIS using the 1 m DEM
 raster as a reference for sampling grid cells.  
 
 Historical climate data (maximum temperature, minimum temperature,
-precipitation) from 1979-2022 was provided by the gridMET
-dataset at a daily timestep and 4 km resolution
+precipitation) from 1979-2022 was provided by the gridMET dataset at a
+daily timestep and 4 km resolution
 [@abatzoglouDevelopmentGriddedSurface2013].  Projected climate data
 for the same variables was provided by the MACA data set at the same
 timestep and spatial resolution
@@ -269,14 +267,25 @@ the MACA data set were included in this analysis (n = 19):
   "MRI-CGCM3",
 "NorESM1-M"); knitr::kable(models, col.names = c("GCM"))`
 
+
+The Burroughs Creek site is much smaller in scale than the 4 km grid
+cells, and falls at the center of the intersection of four grid cells.
+To remove spatial discontinuities in the modeled water balance for the
+site, the grid cell with an elevation closest to the mean elevation
+for the site was selected and climate data from this grid cell was applied across the site.  
+
 The daily water balance at a 1m resolution was modeled using a
 modified version of the script used to generate the NPS 1 km Gridded
 Water Balance product for the coterminous United States
 [@tercekHistoricalChangesPlant2021].  Annual sums of AET (mm) and
-Deficit (mm)
-were calculated for the historical dataset as well as for each
-GCM/Scenario combination.  Ensemble averages for annual sums of AET
-and Deficit were created.
+Deficit (mm) were calculated for the historical dataset as well as for
+each GCM/Scenario combination.  Ensemble averages for annual sums of
+AET and Deficit were created.
+
+For comparisons with projected conditions, annual AET and CWD sums
+between 2002-2022 were averaged to use as current baseline conditions.
+Projections were summarized in near-term (2025-2049), mid-century
+(2050-2075), and end-century (2076-2099) periods.
 
 <!-- `r crs(elev, proj = TRUE)` -->
 
@@ -290,7 +299,7 @@ and Deficit were created.
 <!-- t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]] -->
 <!-- ``` -->
 
-<!-- Jennings *T*~50~ coeffcient used for all cells = `r t50` -->
+<!-- Jennings *T*~50~ coeffcient used for all cells = r t50 -->
 
 <!-- # Methods -->
 <!-- ## Analysis -->
@@ -456,7 +465,6 @@ cwd_1988_plot <- ggplot() +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 ```
-
 
 ``` {r historical-aet-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Historical AET (mm)"}
 ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
@@ -686,45 +694,38 @@ ggarrange(aet_ens45_sd_plot, aet_ens85_sd_plot, common.legend = TRUE)
 
 ## Change from Baseline
 
-``` {r baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%'}
-## CWD change from baseline
-
+``` {r cwd-baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Ensemble mean CWD end-of-century (2075-2099) change from baseline (2002-2022)"}
 cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_2022
-(global(mean(cwd_rcp45_change_from_baseline)))
 
 cwd_45_change_plot <- ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = cwd_rcp45_change_from_baseline, alpha = 1) +
     cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean CWD end-of-century (2075-2099) change from baseline (2002-2022)") +
+    labs(title = "CWD RCP4.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 cwd_rcp85_change_from_baseline <- cwd_ens85_end - cwd_2022
-(global(mean(cwd_rcp85_change_from_baseline)))
 
 cwd_85_change_plot <- ggplot() +
-##    geom_spatraster(data = shade, show.legend = FALSE) +
-##    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = cwd_rcp85_change_from_baseline, alpha = 1) +
     cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP8.5 Ensemble Mean CWD end-of-century (2075-2099) change from baseline (2002-2022)") +
+    labs(title = "CWD RCP8.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 ggarrange(cwd_45_change_plot, cwd_85_change_plot, common.legend = TRUE)
+```
 
+``` {r aet-baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Ensemble mean AET end-of-century (2075-2099) change from baseline (2002-2022)"}
 ## AET change from baseline
 
 aet_rcp45_change_from_baseline <- aet_ens45_end - aet_2022
-(global(mean(aet_rcp45_change_from_baseline)))
 
 aet_45_change_plot <- ggplot() +
 ##    geom_spatraster(data = shade, show.legend = FALSE) +
@@ -734,13 +735,12 @@ aet_45_change_plot <- ggplot() +
     aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP4.5 Ensemble Mean AET end-of-century (2075-2099) change from baseline (2002-2022)") +
+    labs(title = "AET RCP4.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 
 aet_rcp85_change_from_baseline <- aet_ens85_end - aet_2022
-(global(mean(aet_rcp85_change_from_baseline)))
 
 aet_85_change_plot <- ggplot() +
     ##    geom_spatraster(data = shade, show.legend = FALSE) +
@@ -750,178 +750,189 @@ aet_85_change_plot <- ggplot() +
     aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "RCP8.5 Ensemble Mean AET end-of-century change from baseline (2002-2022)") +
+    labs(title = "AET RCP8.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
 ggarrange(aet_45_change_plot, aet_85_change_plot, common.legend = TRUE)
+```
+
+| Scenario | AET Mean change from 2002-2022 Baseline          | CWD Mean change from 2002-2022 Baseline          |
+|----------|--------------------------------------------------|--------------------------------------------------|
+| RCP4.5   | `r global(mean(aet_rcp45_change_from_baseline))` | `r global(mean(cwd_rcp45_change_from_baseline))` |
+| RCP8.5   | `r global(mean(aet_rcp85_change_from_baseline))` | `r global(mean(cwd_rcp85_change_from_baseline))` |
 
 
-## years = c(near, mid, end)
-## vars = c("aet", "cwd")
-## types = c("mean", "min", "max")
-## secnarios <- c("rcp45", "rcp85")
 
-## unit_stats <- tibble()
-## for (year in years) {
-##     for (var in vars) {
-##         for (type in types) {
-##             unit_stats <- bind_rows(unit_stats,
-##                                bind_cols(year = year,
-##                                          var = var,
-##                                          type = type,
-##                                          value = zonal(get(glue::glue("{var}_{year}")), vect(units), fun = type, na.rm = TRUE)[[1]]))
-##         }
-##     }
-## }
+Summary of mean shifts in climate for historic and projected conditions:
 
-## unit_stats <- bind_cols(unit = rep(units$Unit, nrow(unit_stats) / 2), unit_stats)
+| Year                | Mean AET                         | Mean CWD                         |
+|---------------------|----------------------------------|----------------------------------|
+| 1988 (Drought Year) | `r global(mean(aet_1988))`       | `r global(mean(cwd_1988))`       |
+| 1982-2002           | `r global(mean(aet_2002))`       | `r global(mean(cwd_2002))`       |
+| 2002-2022           | `r global(mean(aet_2022))`       | `r global(mean(cwd_2022))`       |
+| RCP4.5 near         | `r global(mean(aet_ens45_near))` | `r global(mean(cwd_ens45_near))` |
+| RCP8.5 near         | `r global(mean(aet_ens85_near))` | `r global(mean(cwd_ens85_near))` |
+| RCP4.5 mid          | `r global(mean(aet_ens45_mid))`  | `r global(mean(cwd_ens45_mid))`  |
+| RCP8.5 mid          | `r global(mean(aet_ens85_mid))`  | `r global(mean(cwd_ens85_mid))`  |
+| RCP4.5 end          | `r global(mean(aet_ens45_end))`  | `r global(mean(cwd_ens45_end))`  |
+| RCP8.5 end          | `r global(mean(aet_ens85_end))`  | `r global(mean(cwd_ens85_end))`  |
 
-## unit_stats %>%
-##     pivot_wider(
-##         id_cols = c(unit, year, var),
-##         names_from = type,
-##         values_from = value
-##     ) %>%
-##     ggplot(aes(x = year, y = mean, color = unit)) +
-##     geom_line() +
-##     geom_ribbon(aes(ymin = min, ymax = max, fill = unit), linetype = "dashed", alpha = 0.1) +
-##     ## geom_linerange(aes(x = year, y = mean, ymin = min, ymax = max), color = unit) +
-##     facet_wrap(~var)
+
+## Best Planting Sites
+An algorithm to select the "best" planting locations based on this
+data is presented here.  The 1,000,000 pixels with the highest AET and
+1,000,000 pixels with the lowest CWD are selected.  Pixels that
+overlap between these layers are selected, giving pixels that maximize
+AET and minimize CWD, and decreasing selected pixels to around 200,000
+or approximately 10-15% of the landscape here.  
+``` {r best-plantings, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 20, fig.width = 10, out.width = '100%', fig.cap = "Locations that maximize AET and CWD for historical (2002-2022) and RCP4.5/RCP8.5 end-of-century projection ensembles.  n = number of pixels selected by algorithm, percentage shown is percentage of landscape identified by algorithm."}
+n_sites <- 1000000
+
+## (n_sites / ncell(elev)) * 100
+
+highest_aet_historical <- selectHighest(aet_2022, n = n_sites)
+lowest_cwd_historical <- selectHighest(cwd_2022, n = n_sites, low = TRUE)
+
+best_sites_historical <- highest_aet_historical & lowest_cwd_historical
+
+n_best_sites_historical <- zonal(best_sites_historical, best_sites_historical, length)[[2]]
+
+## (n_best_sites / ncell(elev)) * 100
+
+mean_aet_historical <- global(mask(aet_2022, highest_aet_historical), fun = "mean", na.rm = TRUE)
+mean_cwd_historical <- global(mask(cwd_2022, lowest_cwd_historical), fun = "mean", na.rm = TRUE)
+
+highest_aet_rcp45 <- selectHighest(aet_ens45_end, n = n_sites)
+lowest_cwd_rcp45 <- selectHighest(cwd_ens45_end, n = n_sites, low = TRUE)
+
+best_sites_rcp45 <- highest_aet_rcp45 & lowest_cwd_rcp45
+
+n_best_sites_rcp45 <- zonal(best_sites_rcp45, best_sites_rcp45, length)[[2]]
+
+## (n_best_sites / ncell(elev)) * 100
+
+mean_aet_rcp45 <- global(mask(aet_ens45_end, highest_aet_rcp45), fun = "mean", na.rm = TRUE)
+mean_cwd_rcp45 <- global(mask(cwd_ens45_end, lowest_cwd_rcp45), fun = "mean", na.rm = TRUE)
+
+
+highest_aet_rcp85 <- selectHighest(aet_ens85_end, n = n_sites)
+lowest_cwd_rcp85 <- selectHighest(cwd_ens85_end, n = n_sites, low = TRUE)
+
+best_sites_rcp85 <- highest_aet_rcp85 & lowest_cwd_rcp85
+
+n_best_sites_rcp85 <- zonal(best_sites_rcp85, best_sites_rcp85, length)[[2]]
+
+## (n_best_sites / ncell(elev)) * 100
+
+mean_aet_rcp85 <- global(mask(aet_ens85_end, highest_aet_rcp85), fun = "mean", na.rm = TRUE)
+mean_cwd_rcp85 <- global(mask(cwd_ens85_end, lowest_cwd_rcp85), fun = "mean", na.rm = TRUE)
+
+
+best_sites_historical_plot <- ggplot() +
+  geom_spatraster(data = shade, show.legend = FALSE) +
+  ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+  scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+  ggnewscale::new_scale_fill() +
+  geom_spatraster(data = best_sites_historical) +
+  scale_fill_discrete(na.value = "transparent") +
+  geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
+  geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
+  labs(title = glue::glue("Historical (2002-2022), n = {n_best_sites_historical}, {round(n_best_sites_historical * 100 / ncell(elev), 2)}%")) +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+best_sites_rcp45_plot <- ggplot() +
+  geom_spatraster(data = shade, show.legend = FALSE) +
+  ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+  scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+  ggnewscale::new_scale_fill() +
+  geom_spatraster(data = best_sites_rcp45) +
+  scale_fill_discrete(na.value = "transparent") +
+  geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
+  geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
+  labs(title = glue::glue("RCP4.5 End of Century n = {n_best_sites_rcp45}, {round(n_best_sites_rcp45 * 100 / ncell(elev), 2)}%")) +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+best_sites_rcp85_plot <- ggplot() +
+  geom_spatraster(data = shade, show.legend = FALSE) +
+  ##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
+  scale_fill_gradientn(colors = pal_greys, na.value = NA) +
+  ggnewscale::new_scale_fill() +
+  geom_spatraster(data = best_sites_rcp85) +
+  scale_fill_discrete(na.value = "transparent") +
+  geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
+  geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
+  labs(title = glue::glue("RCP8.5 End of Century n = {n_best_sites_rcp85}, {round(n_best_sites_rcp85 * 100 / ncell(elev), 2)}%")) +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+## bind_cols(units,
+##     sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
+## ) %>%
+##     as_tibble() %>%
+##     select(Unit, sum_area_best_sites) %>%
+##     knitr::kable(digits = 2)
+
+ggarrange(best_sites_historical_plot, best_sites_rcp45_plot, best_sites_rcp85_plot,
+    ncol = 1
+)
 
 ```
+This algorithm identifies areas of the landscape that are ideal based on the criteria of maximizing AET and minimizing CWD, relative to other pixels in the landscape for the same time period.  Much of the area identified by this algorithm in the based on conditions over the past twenty years is likely to remain the areas that maximize AET and minimize CWD under projected climatic conditions at the end of the century (Figure \@ref(fig:best-plantings)).  However, widespread warming under climate projections will also affect these areas, and they will likely experience increases in both annual AET and Deficit by the end of the century as will the rest of the landscape.  
+
+Average conditions of "ideal pixels" (red pixels in Figure \@ref(fig:best-plantings)) in historic, RCP4.5 and RCP8.5 scenarios:
+
+| Scenario | Mean AET                | Mean CWD                |
+|----------|-------------------------|-------------------------|
+| Historic | `r mean_aet_historical` | `r mean_cwd_historical` |
+| RCP4.5   | `r mean_aet_rcp45`      | `r mean_cwd_rcp45`      |
+| RCP8.5   | `r mean_aet_rcp85`      | `r mean_cwd_rcp85`      |
 
 
 # Discussion
-## Best Planting Sites
-### Historical
-``` {r best-plantings, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
-n_sites <- 1000000
 
-(n_sites / ncell(elev)) * 100
+# Limitations
+Snow accumulation and melt were modeled at the scale of the entire
+site, and was not downscaled based on topography.  In reality, snow
+accumulation and melt is affected by factors such as slope, aspect, as
+well as horizontal movement through snow drift.  Future analyses could
+incorporate the high-resolution topographic data used here to improve
+accuracy of snow melt and accumulation dynamics at fine scales.
 
-highest_aet <- selectHighest(aet_2022, n = n_sites)
-lowest_cwd <- selectHighest(cwd_2022, n = n_sites, low = TRUE)
+Temperature and precipitation data were applied uniformly across all
+pixels in the site.  However, temperature is affected by changes in
+elevation and this can impact the accuracy of modeled water balance
+metrics.  Future analyses could incorporate temperature corrections
+based on lapse rate to improve accuracy of modeled metrics that are
+temperature-sensitive [@tercekCorrectlyApplyingLapse2021].
 
-best_sites <- highest_aet & lowest_cwd
+Soil survey data provided by the SSURGO database is intended to be
+used at scales of 1:24,000.  There is likely considerable variation in
+the soil characteristics observed at the fine spatial scales analyzed
+here that is not captured in these surveys.  Planting decisions made
+using this data should consider observed soil characteristics in the
+field in conjunction with data presented here.
 
-(n_best_sites <- zonal(best_sites, best_sites, length)[[2]])
+# TODO
 
-(n_best_sites / ncell(elev)) * 100
+- 3d Maps
+- Other ways to identify ideal planting locations.  What criteria are Nancy/planting crews looking for?
 
-(mean_aet <- global(mask(aet_2022, highest_aet), fun = "mean", na.rm = TRUE))
-(mean_cwd <- global(mask(cwd_2022, lowest_cwd), fun = "mean", na.rm = TRUE))
+# Acknowledgments
+Computational efforts were performed on the [Tempest High Performance
+Computing System](https://www.montana.edu/uit/rci/tempest/), operated and supported by University Information
+Technology Research Cyberinfrastructure at Montana State University.
 
-
-ggplot() +
-    geom_spatraster(data = shade, show.legend = FALSE) +
-##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = best_sites) +
-    scale_fill_discrete(na.value = "transparent") +
-    geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
-    geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
-    labs(title = glue::glue("Best Planting Sites (Highest AET + Lowest Deficit 2002-2022) n = {n_best_sites}, {round(n_best_sites * 100 / ncell(elev), 2)}%")) +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-bind_cols(units,
-    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
-) %>%
-    as_tibble() %>%
-    select(Unit, sum_area_best_sites) %>%
-    knitr::kable(digits = 2)
-
-```
-Optimal planting locations will have high AET and low CWD, to maximize potential growth and minimize drought stress.  This algorithm selects for the n = `r n_sites` pixels with the highest AET and n with lowest CWD.  The logical union of these layers is taken to find the best sites, that simultaneously have the highest AET and lowest CWD possible, representing `r round(n_best_sites / ncell(elev), 2)` of the landscape.  
-
-
-### RCP45
-
-``` {r best-45, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
-highest_aet <- selectHighest(aet_ens45_end, n = n_sites)
-lowest_cwd <- selectHighest(cwd_ens45_end, n = n_sites, low = TRUE)
-
-best_sites <- highest_aet & lowest_cwd
-
-(n_best_sites <- zonal(best_sites, best_sites, length)[[2]])
-
-(n_best_sites / ncell(elev)) * 100
-
-(mean_aet <- global(mask(aet_ens45_end, highest_aet), fun = "mean", na.rm = TRUE))
-(mean_cwd <- global(mask(cwd_ens45_end, lowest_cwd), fun = "mean", na.rm = TRUE))
-
-
-ggplot() +
-    geom_spatraster(data = shade, show.legend = FALSE) +
-##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = best_sites) +
-    scale_fill_discrete(na.value = "transparent") +
-    geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
-    geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
-    labs(title = glue::glue("Best Planting Sites (Highest AET + Lowest Deficit RCP 45 End of Century) n = {n_best_sites}, {round(n_best_sites * 100 / ncell(elev), 2)}%")) +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-bind_cols(units,
-    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
-) %>%
-    as_tibble() %>%
-    select(Unit, sum_area_best_sites) %>%
-    knitr::kable(digits = 2)
-
-```
-
-### RCP85
-
-``` {r best-85, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
-highest_aet <- selectHighest(aet_ens85_end, n = n_sites)
-lowest_cwd <- selectHighest(cwd_ens85_end, n = n_sites, low = TRUE)
-
-best_sites <- highest_aet & lowest_cwd
-
-(n_best_sites <- zonal(best_sites, best_sites, length)[[2]])
-
-(n_best_sites / ncell(elev)) * 100
-
-(mean_aet <- global(mask(aet_ens85_end, highest_aet), fun = "mean", na.rm = TRUE))
-(mean_cwd <- global(mask(cwd_ens85_end, lowest_cwd), fun = "mean", na.rm = TRUE))
-
-
-ggplot() +
-    geom_spatraster(data = shade, show.legend = FALSE) +
-##    geom_spatraster(data = subset(tmmn$daily_minimum_temperature, 1)) +
-    scale_fill_gradientn(colors = pal_greys, na.value = NA) +
-    ggnewscale::new_scale_fill() +
-    geom_spatraster(data = best_sites) +
-    scale_fill_discrete(na.value = "transparent") +
-    geom_sf(data = fs_roads, color = "orange", lwd = 1.5, alpha = 0.5) +
-    geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
-    labs(title = glue::glue("Best Planting Sites (Highest AET + Lowest Deficit RCP 85 End of Century) n = {n_best_sites}, {round(n_best_sites * 100 / ncell(elev), 2)}%")) +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
-
-bind_cols(units,
-    sum_area_best_sites = zonal(best_sites, vect(units), fun = "sum", na.rm = TRUE)[[1]]
-) %>%
-    as_tibble() %>%
-    select(Unit, sum_area_best_sites) %>%
-    knitr::kable(digits = 2)
-
-```
+# References
 
 <!-- Local Variables: -->
 <!-- jinx-local-words: "ncell" -->
 <!-- End: -->
-
-
-# References
