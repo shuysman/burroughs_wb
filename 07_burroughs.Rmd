@@ -1,5 +1,5 @@
 ---
-title: 'Burroughs Creek WBP Planting Microsites'
+title: 'Burroughs Creek (Shoshone National Forest) WBP Planting Microsite Analysis'
 author: 
   - Stephen Huysman, shuysman@gmail.com
 email: "shuysman@gmail.com"
@@ -9,17 +9,19 @@ csl: global-ecology-and-biogeography.csl
 link-citations: true
 output:
   bookdown::html_document2:
+    theme: cerulean
     number_sections: true
+    toc: true
 ---
 
 ```{css, echo=FALSE}
-body .main-container {
-    max-width: 2000px !important;
-    width: 1080px !important;
-}
-body {
-    max-width: 2000px !important;
-}
+/* body .main-container { */
+/*     max-width: 2000px !important; */
+/*     width: 1080px !important; */
+/* } */
+/* body { */
+/*     max-width: 2000px !important; */
+/* } */
 ```
 
 ``` {r setup, include = FALSE}
@@ -32,6 +34,7 @@ library(ggspatial)
 library(ggpubr)
 library(kableExtra)
 
+options(digits = 2)
 terraOptions(verbose = FALSE,
              memfrac = 0.9)
 
@@ -75,6 +78,18 @@ aet_change_scale <-
 
 cwd_change_scale <-
     scale_fill_viridis_c(option = "F", limits = c(0, 200))
+
+aet_scale <-
+    scale_fill_viridis_c(option = "D", limits = c(50, 500))
+
+cwd_scale <-
+  scale_fill_viridis_c(option = "B", limits = c(0, 550))
+
+aet_sd_scale <-
+    scale_fill_viridis_c(option = "A", limits = c(0, 15))
+
+cwd_sd_scale <-
+    scale_fill_viridis_c(option = "C", limits = c(0, 30))
 ```
 
 # Introduction
@@ -151,7 +166,11 @@ to:
        cause mortality in trees that are not adapted to those extremes
        (M. Tercek, personal communication, June 4, 2024).
 
-## Planting Units
+Color scales used for maps are kept the same for each variable (AET,
+CWD) throughout this report, so direct comparisons can be made between
+maps for the same variable made for different periods of time.
+
+## Topography
 
 ```{r planting-units, fig.cap = "Burroughs Creek Planting Units, with hillshade and USFS roads.", fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE}
 ggplot() +
@@ -209,11 +228,72 @@ Soils in the WB2 unit hold approximately 8 mm more water on average
 ``` {r soils-zonals, echo = FALSE}
 zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
     cbind(Unit = units$Unit, .) %>%
-    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)"), caption = "Average soil WHC (mm)") %>%
-    kable_styling(full_width = F)
+    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)"), caption = "Average soil WHC (mm)")
 ```
 
 The SSURGO soil automated report for the site can be read here [20240514_11420911928_90_Soil_Report.pdf](./20240514_11420911928_90_Soil_Report.pdf "20240514_11420911928_90_Soil_Report.pdf").
+
+## Climate space of WBP
+
+``` {r climate-space, fig.height = 10, fig.width = 10, warning = FALSE, message = FALSE, echo = FALSE, fig.cap = "Bioclimatic niche space of WBP.  WBP occurrence points taken from NPS white pine blister rust monitoring data set.  WBP occurences within the Greater Yellowstone Ecosystem are highlighted in light blue. AET and CWD values are sampled from the 1 km. NPS Gridded Water Balance model summary layers (http://screenedcleanedsummaries.s3-website-us-west-2.amazonaws.com/).  Historical and RCP4.5/RCP8.5 projections for AET and CWD for a point in the Burroughs Creek site (43.7061975, -109.6778113) were also sampled from the NPS Gridded Water Balance model summary layers and displayed using a + symbol. Projections are ensemble averages of CMIP5 models. Note that AET and CWD values in the NPS Gridded Water Balance product were calculated using different model parameters (soil WHC, topography) and should not be compared to the 1m water balance model presented here."}
+library(plotly)
+library(gghighlight)
+
+burroughs_ck <- c(-109.6778113, 43.7061975)
+
+aet_summary_dir <- file.path("/media/smithers/shuysman/data/nps_gridded_wb/summary_layers/AET/")
+cwd_summary_dir <- file.path("/media/smithers/shuysman/data/nps_gridded_wb/summary_layers/Deficit/")
+
+aet <- rast(file.path(aet_summary_dir, "historical/V_1_5_annual_gridmet_historical_AET_2000_2019_annual_means_cropped_units_mm.tif"))
+names(aet) <- "AET"
+cwd <- rast(file.path(cwd_summary_dir, "historical/V_1_5_annual_gridmet_historical_Deficit_2000_2019_annual_means_cropped_units_mm.tif"))
+names(cwd) <- "CWD"
+aet_45 <- rast(file.path(aet_summary_dir, "rcp45/ensembles/ensemble_2070_2099_annual_rcp45_AET_units_mm.tif"))
+names(aet_45) <- "AET_45"
+cwd_45 <- rast(file.path(cwd_summary_dir, "rcp45/ensembles/ensemble_2070_2099_annual_rcp45_Deficit_units_mm.tif"))
+names(cwd_45) <- "CWD_45"
+aet_85 <- rast(file.path(aet_summary_dir, "rcp85/ensembles/ensemble_2070_2099_annual_rcp85_AET_units_mm.tif"))
+names(aet_85) <- "AET_85"
+cwd_85 <- rast(file.path(cwd_summary_dir, "rcp85/ensembles/ensemble_2070_2099_annual_rcp85_Deficit_units_mm.tif"))
+names(cwd_85) <- "CWD_85"
+
+wbp_points <- read_csv("/home/steve/OneDrive/whitebark/blister-rust/ej/SITE_LOCATIONS.csv") %>%
+  bind_rows(tibble(network = "burroughs", park = "burroughs", long = burroughs_ck[1], lat = burroughs_ck[2])) %>%
+  drop_na(c("lat", "long")) %>%
+  st_as_sf(coords = c("long", "lat"), crs = st_crs("EPSG:4326")) %>%
+  st_transform(crs = st_crs(aet))
+
+wbp_points <- extract(aet, wbp_points, bind = TRUE)
+wbp_points <- extract(cwd, wbp_points, bind = TRUE)
+wbp_points <- extract(aet_45, wbp_points, bind = TRUE)
+wbp_points <- extract(cwd_45, wbp_points, bind = TRUE)
+wbp_points <- extract(aet_85, wbp_points, bind = TRUE)
+wbp_points <- extract(cwd_85, wbp_points, bind = TRUE)
+
+## wbp_plot <- ggplot(wbp_points) +
+##     geom_point(aes(x = CWD, y = AET, color = park)) +
+##     labs(title = "WBP Bioclimatic Niche")
+## ggplotly(wbp_plot)
+
+ggplot(wbp_points) +
+    geom_point(aes(x = CWD, y = AET, color = park)) +
+    ## geom_point(aes(x = 179.89, 192.98), color = "blue", shape = 3, size = 10) +
+    ## geom_text(aes(x = 179.89, 192.98), color = "blue", label = "historic") +
+    ## geom_point(aes(x = 235.81, 247.61), color = "green", shape = 2, size = 10) +
+    ## geom_text(aes(x = 235.81, 247.61), color = "green", label = "rcp4.5") +
+    ## geom_point(aes(x = 306.32, 287.88), color = "red", shape = 2, size = 10) +
+  ## geom_text(aes(x = 306.32, 287.88), color = "red", label = "rcp8.5") +
+  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), color = "green") +
+  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), color = "red") +
+  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), color = "orange") +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), label = "Historical", nudge_y = 2, size = 6) +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), label = "4.5", nudge_y = 2, size = 6) +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), label = "8.5", nudge_y = 2, size = 6) +
+  gghighlight(park %in% c("GYE", "burroughs")) +
+  labs(title = "WBP Bioclimatic Niche (GYE)")
+
+
+```
 
 # Methods
 A Thornthwaite-style water balance model
@@ -244,29 +324,25 @@ commensurate with no breaks between past and future. The historical
 and projected climate grids were reprojected and resampled to the same
 CRS, extent, and resolution as the 1 m DEM raster.
 
-Temperature and Precipitation projections for the following GCMs from
-the MACA data set were included in this analysis (n = 19):
+Four CMIP5 GCMs for RCP4.5 and RCP8.5 scenarios were selected to
+bracket plausible future conditions. GCM/Scenario combinations that
+represented warm wet, hot wet, warm dry, and hot dry conditions in
+Yellowstone National Park (representing conditions in the larger GYE)
+were selected based on projected changes in annual temperature and
+precipitation by 2050 (Data from Mike Tercek, do we have a citation
+for this?).  The four GCM and Scenario combinations selected to
+represent plausible future conditions at the Burroughs Creek site are
+shown in table \@ref(tab:GCM-table).
 
-`r models <- c("bcc-csm1-1-m",
-  "bcc-csm1-1",
-  "BNU-ESM",
-  "CanESM2",
-  "CNRM-CM5",
-  "CSIRO-Mk3-6-0",
-  "GFDL-ESM2G",
-  "GFDL-ESM2M",
-  "HadGEM2-CC365",
-  "HadGEM2-ES365",
-  "inmcm4",
-  "IPSL-CM5A-LR",
-  "IPSL-CM5A-MR",
-  "IPSL-CM5B-LR",
-  "MIROC5",
-  "MIROC-ESM-CHEM",
-  "MIROC-ESM",
-  "MRI-CGCM3",
-"NorESM1-M"); knitr::kable(models, col.names = c("GCM"))`
-
+Table (\#tab:GCM-table): GCM and emission scenarios representing Warm
+Wet, Hot Wet, Warm Dry, and Hot Dry conditions, bracketing the range
+of plausible climate futures at the site.
+| Future   | GCM           | Scenario |
+|----------|---------------|----------|
+| Warm Wet | MRI-CGCM3     | RCP8.5   |
+| Hot Wet  | CanESM2       | RCP8.5   |
+| Warm Dry | MRI-CGCM3     | RCP4.5   |
+| Hot Dry  | HadGEM2-CC365 | RCP8.5   |
 
 The Burroughs Creek site is much smaller in scale than the 4 km grid
 cells, and falls at the center of the intersection of four grid cells.
@@ -277,58 +353,21 @@ for the site was selected and climate data from this grid cell was applied acros
 The daily water balance at a 1m resolution was modeled using a
 modified version of the script used to generate the NPS 1 km Gridded
 Water Balance product for the coterminous United States
-[@tercekHistoricalChangesPlant2021].  Annual sums of AET (mm) and
-Deficit (mm) were calculated for the historical dataset as well as for
-each GCM/Scenario combination.  Ensemble averages for annual sums of
-AET and Deficit were created.
+[@tercekHistoricalChangesPlant2021].  PET was calculated following @oudinEstimatingPotentialEvapotranspiration2010.
+Annual sums of AET (mm) and Deficit (mm) were calculated for the
+historical dataset as well as for each GCM/Scenario combination.
+Ensemble averages for annual sums of AET and Deficit were created.
 
 For comparisons with projected conditions, annual AET and CWD sums
 between 2002-2022 were averaged to use as current baseline conditions.
 Projections were summarized in near-term (2025-2049), mid-century
 (2050-2075), and end-century (2076-2099) periods.
 
-<!-- `r crs(elev, proj = TRUE)` -->
-
-<!-- `r st_bbox(elev)` -->
-
 # Results
 
-<!-- ## T50 -->
-
-<!-- ``` {r include = FALSE} -->
-<!-- t50 <- global(rast("./data/jennings_t50_coefficients.tif"), "mean")[[1]] -->
-<!-- ``` -->
-
-<!-- Jennings *T*~50~ coeffcient used for all cells = r t50 -->
-
-<!-- # Methods -->
-<!-- ## Analysis -->
-<!-- 1. Prepare layers -->
-<!-- Everything projected, resampled, and cropped using 1m LiDAR DEM as Reference -->
-<!-- - DEM -->
-<!-- 1m LiDAR opentopography.org -->
-<!-- - resample_layers.R -->
-<!-- 	dayl -->
-<!-- 	t50 -->
-<!-- - slope (GDAL in QGIS) -->
-<!-- - aspect (GDAL in QGIS) -->
-<!-- - split_ncs.R/split_ncs.sbatch -->
-<!--   Split climate inputs (tmax, tmin, Precip) into tifs, 1 tif per day -->
-<!--   Results in millions of layers for each combo of day/year/gcm/scenario/variable -->
-<!-- - Soil -->
-<!-- SSURGO data from Curve Number Generator in QGIS -->
-<!-- 25 cm depth AWC -->
-
-<!-- 2. Run WB -->
-<!-- start_wb_v_1_5.py -->
-
-<!-- 3. Collate -->
-<!-- collate.R -->
-
-<!-- 4. Annual sums of AET/Deficit -->
-<!-- annual_sum.sh using CDO -->
-
 ## Historical Water Balance
+
+Mean annual sums of AET and CWD for periods from 1982-2002 and 2002-2022 are shown here.  Annual AET and CWD sums for 1988 are shown as an example of a drought year (1988 Yellowstone Wildfires). Refer to table \@ref(tab:climate-summary) for summary of historical and projected climate conditions.
 
 ``` {r historical, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 gridmet_data_dir <- file.path("~/out/sums/")
@@ -389,24 +428,12 @@ unit_stats <- bind_cols(unit = rep(units$Unit, nrow(unit_stats) / 2), unit_stats
 ##     geom_line(aes(x = name, y = value, group = Unit, color = Unit)) +
 ##     labs(title = "Change in CWD normals vs 1988 drought year")
 
-aet_scale <-
-    scale_fill_viridis_c(option = "D", limits = c(50, 350))
-
-cwd_scale <-
-  scale_fill_viridis_c(option = "B", limits = c(0, 400))
-
-aet_sd_scale <-
-    scale_fill_viridis_c(option = "A", limits = c(0, 15))
-
-cwd_sd_scale <-
-    scale_fill_viridis_c(option = "C", limits = c(0, 30))
-
 aet_2002_plot <- ggplot() +
     geom_spatraster(data = aet_2002, alpha = 1) +
     aet_scale + 
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1982-2002 mean annual sum of AET (mm)") +
+    labs(title = "1982-2002") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
@@ -416,7 +443,7 @@ cwd_2002_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1982-2002 mean annual sum of Deficit (mm)") +
+    labs(title = "1982-2002") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
@@ -426,7 +453,7 @@ aet_2022_plot <- ggplot() +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of AET (mm)") +
+    labs(title = "2002-2022") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 ##ggsave("burroughs_2002-2022_aet.png", width=16, height=12)
@@ -437,7 +464,7 @@ cwd_2022_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "2002-2022 mean annual sum of Deficit (mm)") +
+    labs(title = "2002-2022") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 ##ggsave("burroughs_2002-2022_deficit.png", width=16, height=12)
@@ -450,7 +477,7 @@ aet_1988_plot <- ggplot() +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1988 AET (Drought Year)") +
+    labs(title = "AET (mm)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
@@ -461,24 +488,37 @@ cwd_1988_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1988 CWD (Drought Year)") +
+    labs(title = "CWD (mm)") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 ```
 
 ``` {r historical-aet-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Historical AET (mm)"}
-ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE)
+ggarrange(aet_2002_plot, aet_2022_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("Historical annual AET (mm)", size = 14, face = "bold"))
 ```
 
 ``` {r historical-cwd-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Historical CWD (mm)"} 
-ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE)
+ggarrange(cwd_2002_plot, cwd_2022_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("Historical annual CWD (mm)", size = 14, face = "bold"))
 ```
 
 ``` {r drought-year-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Drought Year Conditions (1988)"}
-ggarrange(aet_1988_plot, cwd_1988_plot)
+ggarrange(aet_1988_plot, cwd_1988_plot) %>%
+    annotate_figure(top = text_grob("Dought Year (1988)", size = 14, face = "bold"))
 ```
 
 ## Projected Water Balance
+
+Projected mean annual AET and CWD are shown for three time periods:
+
+1. Near-term: 2025-2049
+2. Mid-century: 2050-2074
+3. End-of-century: 2075-2099
+
+The standard deviation in mean annual CWD for the end-of-century
+(2075-2099) projections is shown as a measure of interannual
+variability in CWD.
 
 ``` {r projections-setup, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 10, out.width = '100%'}
 current <- 2006:2024
@@ -528,8 +568,9 @@ cwd_ens45_end_sd <- cwd_ens45 %>%
   subset(year(time(.)) %in% end) %>%
   stdev()
 cwd_ens85_end_sd <- cwd_ens85 %>%
-  subset(year(time(.)) %in% end) %>%
+    subset(year(time(.)) %in% end) %>%
   stdev()
+
 ```
 
 ```{r cwd-projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 12, out.width = '100%', fig.cap = "Ensemble mean annual CWD (mm), RCP4.5 and RCP8.5 scenarios."}
@@ -588,13 +629,14 @@ cwd_ens85_end_plot <- ggplot() +
   annotation_scale(aes(location = "br"))
 
 ggarrange(
-  cwd_ens45_near_plot, cwd_ens85_near_plot,
-  cwd_ens45_mid_plot,  cwd_ens85_mid_plot,
-  cwd_ens45_end_plot,  cwd_ens85_end_plot,
-  ncol = 2,
-  nrow = 3,
-  common.legend = TRUE
-)
+    cwd_ens45_near_plot, cwd_ens85_near_plot,
+    cwd_ens45_mid_plot,  cwd_ens85_mid_plot,
+    cwd_ens45_end_plot,  cwd_ens85_end_plot,
+    ncol = 2,
+    nrow = 3,
+    common.legend = TRUE
+) %>%
+    annotate_figure(top = text_grob("Projected annual CWD mean (mm)", size = 14, face = "bold"))
 
 ```
 
@@ -610,7 +652,8 @@ cwd_ens85_sd_plot <- ggplot() +
   cwd_sd_scale +
   labs(title = "RCP8.5")
 
-ggarrange(cwd_ens45_sd_plot, cwd_ens85_sd_plot, common.legend = TRUE)
+ggarrange(cwd_ens45_sd_plot, cwd_ens85_sd_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("Projected annual CWD SD (mm)", size = 14, face = "bold"))
 ```
 
 ```{r aet-projections, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 12, out.width = '100%',  fig.cap = "Ensemble mean annual AET (mm), RCP4.5 and RCP8.5 scenarios."}
@@ -669,13 +712,14 @@ aet_ens85_end_plot <- ggplot() +
   annotation_scale(aes(location = "br"))
 
 ggarrange(
-  aet_ens45_near_plot, aet_ens85_near_plot,
-  aet_ens45_mid_plot,  aet_ens85_mid_plot,
-  aet_ens45_end_plot,  aet_ens85_end_plot,
-  ncol = 2,
-  nrow = 3,
-  common.legend = TRUE
-)
+    aet_ens45_near_plot, aet_ens85_near_plot,
+    aet_ens45_mid_plot,  aet_ens85_mid_plot,
+    aet_ens45_end_plot,  aet_ens85_end_plot,
+    ncol = 2,
+    nrow = 3,
+    common.legend = TRUE
+) %>%
+    annotate_figure(top = text_grob("Projected annual AET mean (mm)", size = 14, face = "bold"))
 ```
 
 ``` {r aet-sd-plot, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 16, fig.cap = "Interannual Variability (SD) in ensemble mean annual AET, End-Century (2075-2099)"}
@@ -689,10 +733,135 @@ aet_ens85_sd_plot <- ggplot() +
   aet_sd_scale +
   labs(title = "RCP8.5 Interannual Variability in ensemble mean annual AET, End-Century (2075-2099)")
 
-ggarrange(aet_ens45_sd_plot, aet_ens85_sd_plot, common.legend = TRUE)
+ggarrange(aet_ens45_sd_plot, aet_ens85_sd_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("Projected annual AET SD (mm)", size = 14, face = "bold"))
+
+```
+
+| Future   | GCM           | Scenario |
+|----------|---------------|----------|
+| Warm Wet | MRI-CGCM3     | RCP8.5   |
+| Hot Wet  | CanESM2       | RCP8.5   |
+| Warm Dry | MRI-CGCM3     | RCP4.5   |
+| Hot Dry  | HadGEM2-CC365 | RCP8.5   |
+
+``` {r projections-new}
+current <- 2006:2024
+near <- 2025:2049
+mid <- 2050:2074
+end <- 2075:2099
+
+proj_dir <- file.path("/media/smithers/shuysman/data/burroughs/sums/")
+
+load_gcm <- function(filename) {
+    r <- rast(filename) %>%
+        subset(year(time(.)) %in% end) %>% ## Limit to end-century conditions
+        mean() %>%
+        clamp(lower = 0, values = NA) / 10 ## remove NAs and divide by ten (nps gridded wb is provided in units x 10)
+    return(r)
+}
+
+aet_warm_wet <- load_gcm(file.path(proj_dir, "MRI-CGCM3_rcp85_AET_annual_sum_burroughs.nc"))
+cwd_warm_wet <- load_gcm(file.path(proj_dir, "MRI-CGCM3_rcp85_Deficit_annual_sum_burroughs.nc"))
+
+aet_hot_wet <- load_gcm(file.path(proj_dir, "CanESM2_rcp85_AET_annual_sum_burroughs.nc")) 
+cwd_hot_wet <- load_gcm(file.path(proj_dir, "CanESM2_rcp85_Deficit_annual_sum_burroughs.nc"))
+
+aet_warm_dry <- load_gcm(file.path(proj_dir, "MRI-CGCM3_rcp45_AET_annual_sum_burroughs.nc"))
+cwd_warm_dry <- load_gcm(file.path(proj_dir, "MRI-CGCM3_rcp45_Deficit_annual_sum_burroughs.nc"))
+
+aet_hot_dry <- load_gcm(file.path(proj_dir, "HadGEM2-CC365_rcp85_AET_annual_sum_burroughs.nc"))
+cwd_hot_dry <- load_gcm(file.path(proj_dir, "HadGEM2-CC365_rcp85_Deficit_annual_sum_burroughs.nc"))
+
+aet_warm_wet_plot <- ggplot() +
+  geom_spatraster(data = clamp(aet_warm_wet, lower = 100, values = NA), alpha = 1) +
+  aet_scale +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  labs(title = "AET Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "") +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
+
+cwd_warm_wet_plot <- ggplot() +
+    geom_spatraster(data = clamp(cwd_warm_wet, lower = 100, values = NA), alpha = 1) +
+    cwd_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "CWD Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+aet_hot_wet_plot <- ggplot() +
+    geom_spatraster(data = clamp(aet_hot_wet, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "AET Hot-Wet (CanESM2 RCP8.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+cwd_hot_wet_plot <- ggplot() +
+    geom_spatraster(data = clamp(cwd_hot_wet, lower = 100, values = NA), alpha = 1) +
+    cwd_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "CWD Hot-Wet (CanESM2 RCP8.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+aet_warm_dry_plot <- ggplot() +
+    geom_spatraster(data = clamp(aet_warm_dry, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "AET Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+cwd_warm_dry_plot <- ggplot() +
+    geom_spatraster(data = clamp(cwd_warm_dry, lower = 100, values = NA), alpha = 1) +
+    cwd_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "CWD Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+aet_hot_dry_plot <- ggplot() +
+    geom_spatraster(data = clamp(aet_hot_dry, lower = 100, values = NA), alpha = 1) +
+    aet_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "CWD Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+cwd_hot_dry_plot <- ggplot() +
+    geom_spatraster(data = clamp(cwd_hot_dry, lower = 100, values = NA), alpha = 1) +
+    cwd_scale +
+    geom_sf(data = units, fill = NA, lwd = 1.5) +
+    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+    labs(title = "CWD Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "") +
+    annotation_north_arrow(aes(location = "tr")) +
+    annotation_scale(aes(location = "br"))
+
+
+ggarrange(
+    aet_warm_wet_plot, aet_hot_wet_plot,
+    aet_warm_dry_plot, aet_hot_dry_plot,
+    common.legend = TRUE
+)
+
+ggarrange(
+    cwd_warm_wet_plot, cwd_hot_wet_plot,
+    cwd_warm_dry_plot, cwd_hot_dry_plot,
+    common.legend = TRUE
+)
+
 ```
 
 ## Change from Baseline
+Using historic (2002-2022) conditions as a baseline, we compare the RCP4.5 and RCP8.5 ensemble projections.  Units show mm in crease from baseline conditions.  These visualizations show areas which pixels are projected to change the most and least.  
 
 ``` {r cwd-baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Ensemble mean CWD end-of-century (2075-2099) change from baseline (2002-2022)"}
 cwd_rcp45_change_from_baseline <- cwd_ens45_end - cwd_2022
@@ -703,7 +872,7 @@ cwd_45_change_plot <- ggplot() +
     cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD RCP4.5") +
+    labs(title = "RCP4.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
@@ -715,11 +884,13 @@ cwd_85_change_plot <- ggplot() +
     cwd_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD RCP8.5") +
+    labs(title = "RCP8.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-ggarrange(cwd_45_change_plot, cwd_85_change_plot, common.legend = TRUE)
+ggarrange(cwd_45_change_plot, cwd_85_change_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("CWD change from baseline (2002-2022 to 2075-2099)", size = 14, face = "bold"))
+
 ```
 
 ``` {r aet-baseline, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 8, fig.width = 16, out.width = '100%', fig.cap = "Ensemble mean AET end-of-century (2075-2099) change from baseline (2002-2022)"}
@@ -735,7 +906,7 @@ aet_45_change_plot <- ggplot() +
     aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "AET RCP4.5") +
+    labs(title = "RCP4.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
@@ -750,34 +921,14 @@ aet_85_change_plot <- ggplot() +
     aet_change_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "AET RCP8.5") +
+    labs(title = "RCP8.5") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 
-ggarrange(aet_45_change_plot, aet_85_change_plot, common.legend = TRUE)
+ggarrange(aet_45_change_plot, aet_85_change_plot, common.legend = TRUE) %>%
+    annotate_figure(top = text_grob("AET change from baseline (2002-2022 to 2075-2099)", size = 14, face = "bold"))
+
 ```
-
-| Scenario | AET Mean change from 2002-2022 Baseline          | CWD Mean change from 2002-2022 Baseline          |
-|----------|--------------------------------------------------|--------------------------------------------------|
-| RCP4.5   | `r global(mean(aet_rcp45_change_from_baseline))` | `r global(mean(cwd_rcp45_change_from_baseline))` |
-| RCP8.5   | `r global(mean(aet_rcp85_change_from_baseline))` | `r global(mean(cwd_rcp85_change_from_baseline))` |
-
-
-
-Summary of mean shifts in climate for historic and projected conditions:
-
-| Year                | Mean AET                         | Mean CWD                         |
-|---------------------|----------------------------------|----------------------------------|
-| 1988 (Drought Year) | `r global(mean(aet_1988))`       | `r global(mean(cwd_1988))`       |
-| 1982-2002           | `r global(mean(aet_2002))`       | `r global(mean(cwd_2002))`       |
-| 2002-2022           | `r global(mean(aet_2022))`       | `r global(mean(cwd_2022))`       |
-| RCP4.5 near         | `r global(mean(aet_ens45_near))` | `r global(mean(cwd_ens45_near))` |
-| RCP8.5 near         | `r global(mean(aet_ens85_near))` | `r global(mean(cwd_ens85_near))` |
-| RCP4.5 mid          | `r global(mean(aet_ens45_mid))`  | `r global(mean(cwd_ens45_mid))`  |
-| RCP8.5 mid          | `r global(mean(aet_ens85_mid))`  | `r global(mean(cwd_ens85_mid))`  |
-| RCP4.5 end          | `r global(mean(aet_ens45_end))`  | `r global(mean(cwd_ens45_end))`  |
-| RCP8.5 end          | `r global(mean(aet_ens85_end))`  | `r global(mean(cwd_ens85_end))`  |
-
 
 ## Best Planting Sites
 An algorithm to select the "best" planting locations based on this
@@ -883,7 +1034,9 @@ best_sites_rcp85_plot <- ggplot() +
 
 ggarrange(best_sites_historical_plot, best_sites_rcp45_plot, best_sites_rcp85_plot,
     ncol = 1
-)
+) %>%
+    annotate_figure(top = text_grob("Best Planting Sites", size = 14, face = "bold"))
+
 
 ```
 This algorithm identifies areas of the landscape that are ideal based on the criteria of maximizing AET and minimizing CWD, relative to other pixels in the landscape for the same time period.  Much of the area identified by this algorithm in the based on conditions over the past twenty years is likely to remain the areas that maximize AET and minimize CWD under projected climatic conditions at the end of the century (Figure \@ref(fig:best-plantings)).  However, widespread warming under climate projections will also affect these areas, and they will likely experience increases in both annual AET and Deficit by the end of the century as will the rest of the landscape.  
@@ -897,7 +1050,30 @@ Average conditions of "ideal pixels" (red pixels in Figure \@ref(fig:best-planti
 | RCP8.5   | `r mean_aet_rcp85`      | `r mean_cwd_rcp85`      |
 
 
-# Discussion
+## Climate Summaries
+
+Table: (\#tab:change-from-baseline-table) Change from AET and CWD baseline (2002-2022) in RCP4.5 and RCP8.5 ensembles
+  
+| Scenario | AET Mean change from 2002-2022 Baseline          | CWD Mean change from 2002-2022 Baseline          |
+|----------|--------------------------------------------------|--------------------------------------------------|
+| RCP4.5   | `r global(mean(aet_rcp45_change_from_baseline))` | `r global(mean(cwd_rcp45_change_from_baseline))` |
+| RCP8.5   | `r global(mean(aet_rcp85_change_from_baseline))` | `r global(mean(cwd_rcp85_change_from_baseline))` |
+
+
+
+Table: (\#tab:climate-summary) Summary of climate conditions for historic data and projections.
+
+| Year                | Mean AET                         | Mean CWD                         |
+|---------------------|----------------------------------|----------------------------------|
+| 1988 (Drought Year) | `r global(mean(aet_1988))`       | `r global(mean(cwd_1988))`       |
+| 1982-2002           | `r global(mean(aet_2002))`       | `r global(mean(cwd_2002))`       |
+| 2002-2022           | `r global(mean(aet_2022))`       | `r global(mean(cwd_2022))`       |
+| RCP4.5 near         | `r global(mean(aet_ens45_near))` | `r global(mean(cwd_ens45_near))` |
+| RCP8.5 near         | `r global(mean(aet_ens85_near))` | `r global(mean(cwd_ens85_near))` |
+| RCP4.5 mid          | `r global(mean(aet_ens45_mid))`  | `r global(mean(cwd_ens45_mid))`  |
+| RCP8.5 mid          | `r global(mean(aet_ens85_mid))`  | `r global(mean(cwd_ens85_mid))`  |
+| RCP4.5 end          | `r global(mean(aet_ens45_end))`  | `r global(mean(cwd_ens45_end))`  |
+| RCP8.5 end          | `r global(mean(aet_ens85_end))`  | `r global(mean(cwd_ens85_end))`  |
 
 # Limitations
 Snow accumulation and melt were modeled at the scale of the entire
@@ -921,10 +1097,102 @@ here that is not captured in these surveys.  Planting decisions made
 using this data should consider observed soil characteristics in the
 field in conjunction with data presented here.
 
-# TODO
+# Discussion
 
-- 3d Maps
-- Other ways to identify ideal planting locations.  What criteria are Nancy/planting crews looking for?
+The Burroughs Creek site presents opportunities to take advantage of
+microsites created by the effects of local topographic and soil
+features.
+
+Extreme CWD is likely to threaten tree survival on the site in the
+future.  In 1988, a year in which severe drought led to widespread
+wildfire through the greater region, the Burroughs Creek site (defined
+by the bounding box surrounding the two planting units) experienced an
+average annual CWD of 269.93 mm (Table \@ref(tab:climate-summary)),
+with some locations experiencing higher or lower deficit depending on
+the effects of topoedaphic features (Figure
+\@ref(fig:drought-year-plot)). Under the RCP8.5 scenario, the average
+annual CWD will likely exceed this level, with a mean annual CWD of
+306.32 mm projected averaged across all GCMs.  It is likely that
+plants on the Burroughs Creek site will experience severe drought
+stress in the future, leading to increase mortality as well as
+likelihood of wildfire ignition [@thomaWaterBalanceIndicator2020].  To
+maximize success of tree plantings on this site, planters can utilize
+topoedaphic features to plant in locations that buffer from extreme
+CWD, which will reduce tree stress and promote survival of planted
+seedlings.  
+
+Optimizing for AET in planting locations would increase seedling
+growth rates and establishment
+[@laufenbergBiophysicalGradientsPerformance2020]. In this landscape,
+differences in AET appear to be mainly driven by differences in soil
+WHC, which sustains evapotranspiration for longer in areas with higher
+plant available water storage (Figures
+\@ref(fig:historical-aet-plot),\@ref(fig:aet-projections)). North
+facing slopes which reduce observed CWD also have the effect of
+decreasing AET due to reduced incoming solar radiation.  Given the
+extreme levels of CWD projected on this location, drought mortality in
+planted trees is likely to be high and planters may wish to select
+planting locations that minimize drought stress at the expense of
+slower seedling growth rates.
+
+Unit RL1 is mostly homogeneous in topoedaphic features, being
+primarily an open face that is SE-facing and characterized by low to
+moderate soil WHC for the area (Tables
+\@ref(tab:planting-unit-statistics), \@ref(tab:soils-zonals)).
+Planting microclimates in unit RL1 are likely to be similar throughout
+the unit, however, some landscape features are present which could
+create favorable planting microclimates such as the small hill in the
+south section of the unit where the northern side of the hill appears
+to buffer the location from extreme values of deficit (Figure
+\@ref(fig:best-plantings)).
+
+Unit WB2 is more diverse in soils and topography, with deeper soils
+and more rugged terrain than unit RL1 (Tables
+\@ref(tab:planting-unit-statistics), \@ref(tab:soils-zonals)).  This
+creates a broader range of microclimates, with a broader range of
+observed AET and CWD throughout the unit when compared to RL1 (Figures
+\@ref(fig:historical-aet-plot), \@ref(fig:historical-cwd-plot),
+\@ref(fig:drought-year-plot), \@ref(fig:cwd-projections),
+\@ref(fig:aet-projections).  Undulations in terrain in this unit
+create a variety of north to east facing slopes and shelves that can
+create suitable microclimates for planting (Figure
+\@ref(fig:best-plantings)), while more exposed locations with southern
+aspects show some of the most extreme CWD values observed on the site
+(Figure \@ref(fig:cwd-projections)).  These same areas that create
+favorable conditions measured by annual AET and CWD also appear to
+limit interannual variability in CWD projections (Figure
+\@ref(fig:cwd-sd-plot)), promoting tree longevity, and minimize
+change in CWD and AET from baseline conditions (Figures
+\@ref(fig:aet-baseline) \@ref(fig:cwd-baseline)).  
+
+Unit WB2 has large areas of more hydric soils with higher WHC present
+at the bottom of drainages in the unit (Figure \@ref(fig:soils)). The
+relatively higher soil WHC present in these soils has the effect of
+increasing AET and decreasing CWD where they are present.  However,
+these soils currently support riparian plant communities (soils
+report), and are not likely to be locations that whitebark seedlings
+could be competitive. Due to limitations in the available soil data,
+these soils are treated as relatively discrete areas, however, in
+reality there is likely to be considerable gradation between and
+heterogeneity within soil types. Around the edges of these more hydric
+soils, it is likely that locations can be found that have more plant
+available water than would be expected based on this modeled data. *In
+situ*, trees can also access features like subsurface flows and water
+in bedrock [@mccormickWidespreadWoodyPlant2021], which is not
+accounted for in this model.
+
+A large portion of the area that was identified as optimal for
+planting (Figure \@ref(fig:best-plantings)) is present outside of the
+two planting units. Satellite imagery shows existing tree cover in
+most of the area outside of the planting unit boundaries.  However, if
+planting materials are available and openings exist in some of the
+areas, planters may wish to plant outside of the boundaries where
+suitable planting microclimates exist.
+
+<!-- # TODO -->
+
+<!-- - 3d Maps -->
+<!-- - Other ways to identify ideal planting locations.  What criteria are Nancy/planting crews looking for? -->
 
 # Acknowledgments
 Computational efforts were performed on the [Tempest High Performance
