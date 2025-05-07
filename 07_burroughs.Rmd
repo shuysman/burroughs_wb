@@ -75,7 +75,9 @@ stats <- data.frame(elev_mean = zonal(elev, vect(units), fun = "mean")[[1]],
                          slope_mean = zonal(slope, vect(units), fun = "mean", na.rm = TRUE)[[1]],
                          slope_max = zonal(slope, vect(units), fun = "max", na.rm = TRUE)[[1]],
                          slope_min = zonal(slope, vect(units), fun = "min", na.rm = TRUE)[[1]],
-                         aspect_mean = zonal(aspect, vect(units), fun = "mean", na.rm = TRUE)[[1]]
+                    aspect_mean = zonal(aspect, vect(units), fun = "mean", na.rm = TRUE)[[1]],
+                    aspect_max = zonal(aspect, vect(units), fun = "max", na.rm = TRUE)[[1]],
+                    aspect_min = zonal(aspect, vect(units), fun = "min", na.rm = TRUE)[[1]]
                     )
 
 units <- bind_cols(units, stats)
@@ -215,7 +217,9 @@ knitr::kable(
         slope_mean,
         slope_max,
         slope_min,
-        aspect_mean
+        aspect_mean,
+        aspect_max,
+        aspect_min
     ),
     digits = 2,
     caption = "Topographic Statistics of Burroughs Creek planting units")
@@ -246,7 +250,15 @@ Soils in the WB2 unit hold approximately 8 mm more water on average
 ``` {r soils-zonals, echo = FALSE}
 zonal(soil, vect(units), fun = "mean", na.rm = TRUE) %>%
     cbind(Unit = units$Unit, .) %>%
-    knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)"), caption = "Average soil WHC (mm)")
+  knitr::kable(digits = 2, col.names = c("Unit", "Mean Soil WHC (mm)"), caption = "Average soil WHC (mm)")
+
+zonal(soil, vect(units), fun = "max", na.rm = TRUE) %>%
+    cbind(Unit = units$Unit, .) %>%
+  knitr::kable(digits = 2, col.names = c("Unit", "Max Soil WHC (mm)"), caption = "Max soil WHC (mm)")
+
+zonal(soil, vect(units), fun = "min", na.rm = TRUE) %>%
+    cbind(Unit = units$Unit, .) %>%
+    knitr::kable(digits = 2, col.names = c("Unit", "Mean Min WHC (mm)"), caption = "Min soil WHC (mm)")
 ```
 
 The SSURGO soil automated report for the site can be read here [20240514_11420911928_90_Soil_Report.pdf](./20240514_11420911928_90_Soil_Report.pdf "20240514_11420911928_90_Soil_Report.pdf").
