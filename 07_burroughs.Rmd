@@ -39,8 +39,8 @@ knitr::opts_chunk$set(
   echo = F,
   warning = F,
   message = F,
-  fig.height = 8,
-  fig.width = 10,
+#  fig.height = 8,
+#  fig.width = 10,
   fig.path = paste0("/home/steve/OneDrive/core_areas/img/burroughs/")
 )
 
@@ -197,7 +197,8 @@ ggplot() +
     #geom_sf_text(data = fs_roads, aes(label = ID), alpha = 0.9) +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), alpha = 0.4) +
-    labs(title = "Burroughs WBP Planting Units Hillshade") +
+  #labs(title = "Burroughs WBP Planting Units Hillshade") +
+  labs(x = "", y = "") +
     annotation_north_arrow(aes(location = "tr")) +
     annotation_scale(aes(location = "br"))
 ```
@@ -223,13 +224,14 @@ knitr::kable(
 ##  Soils
 ``` {r soils, fig.height = 8, fig.width = 10, out.width = '100%', warning = FALSE, message = FALSE, echo = FALSE, fig.cap = "Burroughs Creek soil water holding capacity (WHC, mm).  WHC is taken from the SSURGO available water storage at 25 cm soil depth layer"}
 ggplot() +
-    geom_spatraster(data = soil) +
-    labs(title = "Burroughs WBP Planting Unit Soil WHC (mm) to 25cm soil depth") +
-    scale_fill_viridis_b() +
-    geom_sf(data = units, fill = NA, lwd = 1.5) +
-    geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    annotation_north_arrow(aes(location = "tr")) +
-    annotation_scale(aes(location = "br"))
+  geom_spatraster(data = soil) +
+  #labs(title = "Burroughs WBP Planting Unit Soil WHC (mm) to 25cm soil depth") +
+  labs(x = "", y = "", fill = "WHC (mm)") +
+  scale_fill_viridis_b() +
+  geom_sf(data = units, fill = NA, lwd = 1.5) +
+  geom_sf_label(data = units, aes(label = Unit), fill = NA) +
+  annotation_north_arrow(aes(location = "tr")) +
+  annotation_scale(aes(location = "br"))
 ```
 
 Soils range from `r global(soil, min, na.rm = TRUE)[[1]]` to `r global(soil, max, na.rm = TRUE)[[1]]` mm whc at 25 cm soil depth
@@ -355,8 +357,8 @@ climates.
 
 It should be noted that the analysis presented in figure \@ref(fig:climate-space) was generated with a 1 km gridded water balance model and magnitudes from this analysis should not be compared with magnitudes generated in the finer-scale 1 m water balance.  Relative patterns within models at a given scale are comparable, for example both models can tell if a position on the landscape is drier than another.  However, the annual average AET and CWD values between the models at different scales are not comparable.  Additionally, the 1 km gridded water balance model used soil WHC at 100 cm, while soil WHC at 25 cm was used here in order to simulate the growing environment of seedlings or shallow-rooted mature trees, which further compounds the issue of comparing absolute values between the models.  
 
-``` {r climate-space, fig.height = 6, fig.width = 6, warning = FALSE, message = FALSE, echo = FALSE, fig.cap = "Bioclimatic niche space of WBP.  WBP occurrence points taken from NPS white pine blister rust monitoring data set.  WBP occurrences within the Greater Yellowstone Ecosystem are highlighted in light blue. AET and CWD values are sampled from the 1 km. NPS Gridded Water Balance model summary layers (http://screenedcleanedsummaries.s3-website-us-west-2.amazonaws.com/).  Historical and RCP4.5/RCP8.5 projections for AET and CWD for a point in the Burroughs Creek site (43.7061975, -109.6778113) were also sampled from the NPS Gridded Water Balance model summary layers and displayed using a + symbol. Projections are ensemble averages of CMIP5 models. Note that AET and CWD values in the NPS Gridded Water Balance product were calculated using different model parameters (soil WHC, topography) and should not be compared to the 1m water balance model presented here."}
-library(plotly)
+``` {r climate-space, fig.height = 5, fig.width = 5, warning = FALSE, message = FALSE, echo = FALSE, fig.cap = "Bioclimatic niche space of WBP.  WBP occurrence points taken from NPS white pine blister rust monitoring data set.  WBP occurrences within the Greater Yellowstone Ecosystem are highlighted in light blue. AET and CWD values are sampled from the 1 km. NPS Gridded Water Balance model summary layers (http://screenedcleanedsummaries.s3-website-us-west-2.amazonaws.com/).  Historical and RCP4.5/RCP8.5 projections for AET and CWD for a point in the Burroughs Creek site (43.7061975, -109.6778113) were also sampled from the NPS Gridded Water Balance model summary layers and displayed using a + symbol. Projections are ensemble averages of CMIP5 models. Note that AET and CWD values in the NPS Gridded Water Balance product were calculated using different model parameters (soil WHC, topography) and should not be compared to the 1m water balance model presented here."}
+#library(plotly)
 library(gghighlight)
 
 burroughs_ck <- c(-109.6778113, 43.7061975)
@@ -403,14 +405,15 @@ ggplot(wbp_points) +
     ## geom_text(aes(x = 235.81, 247.61), color = "green", label = "rcp4.5") +
     ## geom_point(aes(x = 306.32, 287.88), color = "red", shape = 2, size = 10) +
   ## geom_text(aes(x = 306.32, 287.88), color = "red", label = "rcp8.5") +
-  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), color = "green") +
-  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), color = "red") +
-  geom_point(shape = "+", size = 10, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), color = "orange") +
-  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), label = "Historical", nudge_y = 2, size = 6) +
-  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), label = "4.5", nudge_y = 2, size = 6) +
-  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), label = "8.5", nudge_y = 2, size = 6) +
-  gghighlight(park %in% c("GYE", "burroughs")) +
-  labs(title = "WBP Bioclimatic Niche (GYE)")
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), color = "magenta") +
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), color = "red") +
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), color = "orange") +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), label = "Historical", nudge_y = -10, size = 5) +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), label = "4.5", nudge_y = -10, size = 5) +
+  geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), label = "8.5", nudge_y = -10, size = 5) +
+  labs(x = "Annual CWD (mm)", y = "Annual AET (mm)") +
+  gghighlight(park %in% c("GYE", "burroughs"))
+  #labs(title = "WBP Bioclimatic Niche (GYE)")
 
 
 ```
@@ -432,8 +435,11 @@ cwd <- rast(file.path(gridmet_data_dir, "historical_gridmet_Deficit_annual_sum.n
 aet_1988 <- aet %>% subset(year(time(.)) == 1988)
 cwd_1988 <- cwd %>% subset(year(time(.)) == 1988)
 
+aet_2013 <- aet %>% subset(year(time(.)) == 2013)
+cwd_2013 <- cwd %>% subset(year(time(.)) == 2013)
+
 ### Previous 20 years before current
-aet_2002 <- aet %>% subset(year(time(.)) >= 1982 & year(time(.)) <= 2002) %>% mean()
+aet_2002 <- aet %>% subset(year(time(.)) >= 1982 & year(time(.)) <= 2002)  %>% mean()
 cwd_2002 <- cwd %>% subset(year(time(.)) >= 1982 & year(time(.)) <= 2002) %>% mean()
 
 ### Last 20 years
@@ -838,25 +844,28 @@ ggarrange(
 
 The standard deviation in annual AET and CWD are calculated as a measure of interannual variability (IAV).  This tells how much a pixel changes year to year.  Locations that do not change much on average can be desirable for tree longevity, as rapid shifts in climate can result in tree mortality (M. Tercek, personal communication, June 4, 2024).  The Hot-Dry and Warm-Wet scenarios show the highest IAV in AET (Figure: \@ref(fig:projections-sd-aet)).
 
-``` {r, projections-sd-aet, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 16, out.width = '100%', fig.cap = "AET Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
+``` {r, projections-sd-aet, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "AET Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
+arrow_w <- unit(.75, "cm")
+arrow_h <- unit(.75, "cm")
+
 aet_warm_wet_sd_plot <- ggplot() +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = aet_warm_wet_sd, alpha = 1) +
     aet_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Warm Wet") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Warm Wet", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_hot_wet_sd_plot <- ggplot() +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = aet_hot_wet_sd, alpha = 1) +
-    aet_change_scale +
+    aet_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Hot Wet") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Hot Wet", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_warm_dry_sd_plot <- ggplot() +
@@ -865,8 +874,8 @@ aet_warm_dry_sd_plot <- ggplot() +
     aet_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Warm Dry") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Warm Dry", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_hot_dry_sd_plot <- ggplot() +
@@ -875,8 +884,8 @@ aet_hot_dry_sd_plot <- ggplot() +
     aet_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Hot Dry") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Hot Dry", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_warm_wet_sd_plot <- ggplot() +
@@ -885,8 +894,8 @@ cwd_warm_wet_sd_plot <- ggplot() +
     cwd_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Warm Wet") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Warm Wet", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_hot_wet_sd_plot <- ggplot() +
@@ -895,8 +904,8 @@ cwd_hot_wet_sd_plot <- ggplot() +
     cwd_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Hot Wet") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Hot Wet", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_warm_dry_sd_plot <- ggplot() +
@@ -905,8 +914,8 @@ cwd_warm_dry_sd_plot <- ggplot() +
     cwd_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Warm Dry") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Warm Dry", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_hot_dry_sd_plot <- ggplot() +
@@ -915,8 +924,8 @@ cwd_hot_dry_sd_plot <- ggplot() +
     cwd_sd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "Hot Dry") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "Hot Dry", x = "", y = "", fill = "SD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 ggarrange(
@@ -929,7 +938,7 @@ ggarrange(
 The Hot-Dry scenario shows the highest IAV in CWD (Figure: \@ref(fig:projections-sd-cwd)).
 
 
-``` {r, projections-sd-cwd, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 16, out.width = '100%', fig.cap = "CWD Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
+``` {r, projections-sd-cwd, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "CWD Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
 
 ggarrange(
     cwd_warm_wet_sd_plot, cwd_hot_wet_sd_plot,
@@ -948,7 +957,7 @@ maximize AET and minimize CWD. The final number of selected pixels is
 around 200,000
 or approximately 10-15% of the landscape.  
 
-``` {r, best-plantings-setup, warning = FALSE, echo = FALSE, message = FALSE}
+``` {r, best-plantings-setup1, eval = TRUE, include = FALSE, warning = FALSE, echo = FALSE, message = FALSE}
 
 n_sites <- 1000000
 
@@ -966,6 +975,9 @@ n_best_sites_historical <- zonal(best_sites_historical, best_sites_historical, l
 
 mean_aet_historical <- global(mask(aet_2022, highest_aet_historical), fun = "mean", na.rm = TRUE)
 mean_cwd_historical <- global(mask(cwd_2022, lowest_cwd_historical), fun = "mean", na.rm = TRUE)
+```
+
+```{r, best-plantings-setup2, eval FALSE, include = FALSE}
 
 ### Warm Wet
 
@@ -1156,6 +1168,7 @@ Table: (\#tab:climate-summary) Summary of climate conditions for historic data a
 | Year                                     | Mean AET                       | Mean CWD                       |
 |------------------------------------------|--------------------------------|--------------------------------|
 | 1988 (Drought Year)                      | `r global(mean(aet_1988), na.rm = TRUE)`     | `r global(mean(cwd_1988), na.rm = TRUE)`     |
+| 2013 (Fire Year)                      | `r global(mean(aet_2013), na.rm = TRUE)`     | `r global(mean(cwd_2013), na.rm = TRUE)`     |
 | 1982-2002                                | `r global(mean(aet_2002), na.rm = TRUE)`     | `r global(mean(cwd_2002), na.rm = TRUE)`     |
 | 2002-2022                                | `r global(mean(aet_2022), na.rm = TRUE)`     | `r global(mean(cwd_2022), na.rm = TRUE)`     |
 | Warm Wet 2075-2099 (MRI-CGCM3 RCP8.5)    | `r global(mean(aet_warm_wet), na.rm = TRUE)` | `r global(mean(cwd_warm_wet), na.rm = TRUE)` |
