@@ -92,16 +92,16 @@ cwd_change_scale <-
     scale_fill_viridis_c(option = "F")#, limits = c(0, 300))
 
 aet_scale <-
-    scale_fill_viridis_c(option = "D")#, limits = c(50, 500))
+    scale_fill_viridis_c(option = "D", limits = c(72, 631))
 
 cwd_scale <-
-  scale_fill_viridis_c(option = "B")#, limits = c(0, 550))
+  scale_fill_viridis_c(option = "B", limits = c(0, 400))
 
 aet_sd_scale <-
-    scale_fill_viridis_c(option = "A")#, limits = c(0, 100))
+    scale_fill_viridis_c(option = "A", limits = c(7, 101))
 
 cwd_sd_scale <-
-    scale_fill_viridis_c(option = "C")#, limits = c(0, 350))
+    scale_fill_viridis_c(option = "C", limits = c(0, 97))
 ```
 
 # Introduction
@@ -417,9 +417,9 @@ ggplot(wbp_points) +
     ## geom_text(aes(x = 235.81, 247.61), color = "green", label = "rcp4.5") +
     ## geom_point(aes(x = 306.32, 287.88), color = "red", shape = 2, size = 10) +
   ## geom_text(aes(x = 306.32, 287.88), color = "red", label = "rcp8.5") +
-  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), color = "magenta") +
-  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), color = "red") +
-  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), color = "orange") +
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), color = "black") +
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), color = "orange") +
+  geom_point(shape = "+", size = 12, data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), color = "red") +
   geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD, y = AET), label = "Historical", nudge_y = -10, size = 5) +
   geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_45, y = AET_45), label = "4.5", nudge_y = -10, size = 5) +
   geom_text(data = filter(wbp_points, park == "burroughs"), aes(x = CWD_85, y = AET_85), label = "8.5", nudge_y = -10, size = 5) +
@@ -442,6 +442,8 @@ aet <- rast(file.path(gridmet_data_dir, "historical_gridmet_AET_annual_sum.nc"))
 cwd <- rast(file.path(gridmet_data_dir, "historical_gridmet_Deficit_annual_sum.nc")) |>
     clamp(lower = 0, values = NA) / 10
 
+arrow_w <- unit(.75, "cm")
+arrow_h <- unit(.75, "cm")
 
 ### 1988 Drought Year
 aet_1988 <- aet %>% subset(year(time(.)) == 1988)
@@ -504,8 +506,8 @@ aet_2002_plot <- ggplot() +
     aet_scale + 
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1982-2002") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "1982-2002", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_2002_plot <- ggplot() +
@@ -514,8 +516,8 @@ cwd_2002_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "1982-2002") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "1982-2002", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 
@@ -524,8 +526,8 @@ aet_2022_plot <- ggplot() +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "2002-2022") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2002-2022", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 ##ggsave("burroughs_2002-2022_aet.png", width=16, height=12)
 
@@ -535,8 +537,8 @@ cwd_2022_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "2002-2022") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2002-2022", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 ##ggsave("burroughs_2002-2022_deficit.png", width=16, height=12)
 
@@ -548,8 +550,8 @@ aet_1988_plot <- ggplot() +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "AET (mm)") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "1988", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 
@@ -559,8 +561,8 @@ cwd_1988_plot <- ggplot() +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD (mm)") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "1988", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 ```
 
@@ -644,75 +646,75 @@ writeRaster(cwd_hot_dry, "raster/cwd_hot_dry.tif", overwrite = TRUE)
 
 ``` {r, projections-aet, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 16, fig.width = 16, out.width = '100%', fig.cap = "Projected AET under selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
 aet_warm_wet_plot <- ggplot() +
-  geom_spatraster(data = clamp(aet_warm_wet, lower = 100, values = NA), alpha = 1) +
+  geom_spatraster(data = clamp(aet_warm_wet, lower = 1, values = NA), alpha = 1) +
   aet_scale +
   geom_sf(data = units, fill = NA, lwd = 1.5) +
   geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-  labs(title = "AET Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "") +
-  annotation_north_arrow(aes(location = "tr")) +
+  labs(title = "2075–2099 Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
   annotation_scale(aes(location = "br"))
 
 cwd_warm_wet_plot <- ggplot() +
-    geom_spatraster(data = clamp(cwd_warm_wet, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(cwd_warm_wet, lower = 1, values = NA), alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Warm-Wet (MRI-CGCM3 RCP8.5)", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_hot_wet_plot <- ggplot() +
-    geom_spatraster(data = clamp(aet_hot_wet, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(aet_hot_wet, lower = 1, values = NA), alpha = 1) +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "AET Hot-Wet (CanESM2 RCP8.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Hot-Wet (CanESM2 RCP8.5)", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_hot_wet_plot <- ggplot() +
-    geom_spatraster(data = clamp(cwd_hot_wet, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(cwd_hot_wet, lower = 1, values = NA), alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD Hot-Wet (CanESM2 RCP8.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Hot-Wet (CanESM2 RCP8.5)", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_warm_dry_plot <- ggplot() +
-    geom_spatraster(data = clamp(aet_warm_dry, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(aet_warm_dry, lower = 1, values = NA), alpha = 1) +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "AET Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_warm_dry_plot <- ggplot() +
-    geom_spatraster(data = clamp(cwd_warm_dry, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(cwd_warm_dry, lower = 1, values = NA), alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Warm-Dry (MRI-CGCM3 RCP4.5)", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 aet_hot_dry_plot <- ggplot() +
-    geom_spatraster(data = clamp(aet_hot_dry, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(aet_hot_dry, lower = 1, values = NA), alpha = 1) +
     aet_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "", fill = "AET (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 cwd_hot_dry_plot <- ggplot() +
-    geom_spatraster(data = clamp(cwd_hot_dry, lower = 100, values = NA), alpha = 1) +
+    geom_spatraster(data = clamp(cwd_hot_dry, lower = 1, values = NA), alpha = 1) +
     cwd_scale +
     geom_sf(data = units, fill = NA, lwd = 1.5) +
     geom_sf_label(data = units, aes(label = Unit), fill = NA) +
-    labs(title = "CWD Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "") +
-    annotation_north_arrow(aes(location = "tr")) +
+    labs(title = "2075–2099 Hot-Dry (HadGEM2-CC365 RCP8.5)", x = "", y = "", fill = "CWD (mm)") +
+    annotation_north_arrow(aes(location = "tr"), height = arrow_h, width = arrow_w) +
     annotation_scale(aes(location = "br"))
 
 
@@ -732,6 +734,21 @@ ggarrange(
     cwd_warm_dry_plot, cwd_hot_dry_plot,
     common.legend = TRUE
 )
+```
+
+``` {r, combined-aet-plot, fig.height = 9, fig.width = 11}
+ggarrange(aet_1988_plot, aet_2022_plot,
+          aet_hot_wet_plot, aet_warm_dry_plot,
+          common.legend = TRUE
+          ) + bgcolor("White")     
+
+```
+
+``` {r, combined-cwd-plot, fig.height = 9, fig.width = 11}
+ggarrange(cwd_1988_plot, cwd_2022_plot,
+          cwd_warm_dry_plot, cwd_hot_dry_plot,
+          common.legend = TRUE
+          )
 ```
 
 ### Change in AET/CWD
@@ -856,10 +873,7 @@ ggarrange(
 
 The standard deviation in annual AET and CWD are calculated as a measure of interannual variability (IAV).  This tells how much a pixel changes year to year.  Locations that do not change much on average can be desirable for tree longevity, as rapid shifts in climate can result in tree mortality (M. Tercek, personal communication, June 4, 2024).  The Hot-Dry and Warm-Wet scenarios show the highest IAV in AET (Figure: \@ref(fig:projections-sd-aet)).
 
-``` {r, projections-sd-aet, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "AET Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
-arrow_w <- unit(.75, "cm")
-arrow_h <- unit(.75, "cm")
-
+``` {r, projections-sd-aet, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 9, fig.width = 11, fig.cap = "AET Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
 aet_warm_wet_sd_plot <- ggplot() +
     ggnewscale::new_scale_fill() +
     geom_spatraster(data = aet_warm_wet_sd, alpha = 1) +
@@ -950,7 +964,7 @@ ggarrange(
 The Hot-Dry scenario shows the highest IAV in CWD (Figure: \@ref(fig:projections-sd-cwd)).
 
 
-``` {r, projections-sd-cwd, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 10, fig.width = 10, fig.cap = "CWD Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
+``` {r, projections-sd-cwd, warning = FALSE, message = FALSE, echo = FALSE, fig.height = 9, fig.width = 11, fig.cap = "CWD Interannual variability (standard deviation) in climatic conditions under projections from selected GCMs representing hot/wet, hot/dry, warm/wet, and warm/dry conditions"}
 
 ggarrange(
     cwd_warm_wet_sd_plot, cwd_hot_wet_sd_plot,
@@ -969,7 +983,7 @@ maximize AET and minimize CWD. The final number of selected pixels is
 around 200,000
 or approximately 10-15% of the landscape.  
 
-``` {r, best-plantings-setup1, eval = TRUE, include = FALSE, warning = FALSE, echo = FALSE, message = FALSE}
+``` {r, best-plantings-setup1, eval = FALSE, include = FALSE, warning = FALSE, echo = FALSE, message = FALSE}
 
 n_sites <- 1000000
 
@@ -989,7 +1003,7 @@ mean_aet_historical <- global(mask(aet_2022, highest_aet_historical), fun = "mea
 mean_cwd_historical <- global(mask(cwd_2022, lowest_cwd_historical), fun = "mean", na.rm = TRUE)
 ```
 
-```{r, best-plantings-setup2, eval FALSE, include = FALSE}
+```{r, best-plantings-setup2, eval = FALSE, include = FALSE}
 
 ### Warm Wet
 
