@@ -740,7 +740,7 @@ ggarrange(
 ggarrange(aet_1988_plot, aet_2022_plot,
           aet_hot_wet_plot, aet_warm_dry_plot,
           common.legend = TRUE
-          ) + bgcolor("White")     
+          )
 
 ```
 
